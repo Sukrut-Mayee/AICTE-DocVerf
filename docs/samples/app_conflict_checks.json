@@ -1,0 +1,52 @@
+[
+  {
+    "doc_id": "appx_noc",
+    "layer": "A",
+    "check": "issuer_lookup",
+    "status": "not_applicable",
+    "severity": "info",
+    "reason": "Issuer service did not answer in time; verification pending",
+    "evidence": {},
+    "verification_status": "verification_pending",
+    "source": "mock_issuer:fire_dept",
+    "checked_at": "2027-01-21T10:30:00"
+  },
+  {
+    "doc_id": "appx_noc",
+    "layer": "D",
+    "check": "ela",
+    "status": "suspicious",
+    "severity": "medium",
+    "reason": "Error level in the validity-date region is 2.6 times the page average",
+    "evidence": {
+      "page": 1,
+      "bbox": [
+        0.55,
+        0.78,
+        0.85,
+        0.88
+      ],
+      "heatmap_path": "docs/samples/ela_heatmap_example.png"
+    },
+    "verification_status": null,
+    "source": null,
+    "checked_at": "2027-01-21T10:30:00"
+  },
+  {
+    "doc_id": "appx_land_deed",
+    "layer": "A",
+    "check": "pdf_signature",
+    "status": "verified",
+    "severity": "info",
+    "reason": "PDF signature is intact and signer is trusted",
+    "evidence": {
+      "signed": true,
+      "intact": true,
+      "valid": true,
+      "trusted": true
+    },
+    "verification_status": "verified",
+    "source": null,
+    "checked_at": "2027-01-21T10:30:00"
+  }
+]

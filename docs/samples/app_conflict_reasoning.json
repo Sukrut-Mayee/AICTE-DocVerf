@@ -1,0 +1,245 @@
+{
+  "app_id": "appx",
+  "priority": 401,
+  "findings": [
+    {
+      "finding_id": "f_f597585b",
+      "app_id": "appx",
+      "type": "expired",
+      "severity": "high",
+      "layer": null,
+      "rule_id": "NOC_VALID_FOR_YEAR",
+      "entity": null,
+      "attribute": "valid_until",
+      "claims": [],
+      "doc_ids": [
+        "appx_noc"
+      ],
+      "message": "NOC expires on 2027-12-31 before the academic year ends (2028-06-30)",
+      "evidence": {
+        "field": "valid_until",
+        "value": "2027-12-31",
+        "confidence": 0.9,
+        "page": null,
+        "bbox": null,
+        "compared_to": "2028-06-30"
+      }
+    },
+    {
+      "finding_id": "f_19f170b0",
+      "app_id": "appx",
+      "type": "attribute_conflict",
+      "severity": "high",
+      "layer": "B",
+      "rule_id": "LAND_AREA_AGREE",
+      "entity": "land_parcel:45/2",
+      "attribute": "area",
+      "claims": [
+        {
+          "doc_id": "appx_application_form",
+          "entity": "land_parcel:45/2",
+          "attribute": "area",
+          "value": 2.5,
+          "authority": "self_declared",
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null
+        },
+        {
+          "doc_id": "appx_land_deed",
+          "entity": "land_parcel:45/2",
+          "attribute": "area",
+          "value": 2.1,
+          "authority": "third_party",
+          "confidence": 0.93,
+          "page": 1,
+          "bbox": [
+            0.12,
+            0.41,
+            0.35,
+            0.44
+          ]
+        }
+      ],
+      "doc_ids": [
+        "appx_application_form",
+        "appx_land_deed"
+      ],
+      "message": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed",
+      "evidence": {
+        "clusters": [
+          {
+            "value": 2.5,
+            "doc_ids": [
+              "appx_application_form"
+            ]
+          },
+          {
+            "value": 2.1,
+            "doc_ids": [
+              "appx_land_deed"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "finding_id": "f_0dc00271",
+      "app_id": "appx",
+      "type": "relationship_violation",
+      "severity": "high",
+      "layer": "B",
+      "rule_id": "OWNER_IS_TRUST",
+      "entity": "land_parcel:45/2",
+      "attribute": "owner",
+      "claims": [
+        {
+          "doc_id": "appx_land_deed",
+          "entity": "land_parcel:45/2",
+          "attribute": "owner",
+          "value": "Shree Vidya Charitable Society",
+          "authority": "third_party",
+          "confidence": 0.88,
+          "page": 1,
+          "bbox": [
+            0.12,
+            0.3,
+            0.7,
+            0.34
+          ]
+        },
+        {
+          "doc_id": "appx_application_form",
+          "entity": "trust:E-12345/PUNE",
+          "attribute": "name",
+          "value": "Shree Vidya Education Trust",
+          "authority": "self_declared",
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null
+        }
+      ],
+      "doc_ids": [
+        "appx_land_deed",
+        "appx_application_form"
+      ],
+      "message": "Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'",
+      "evidence": {}
+    },
+    {
+      "finding_id": "f_6b4eb574",
+      "app_id": "appx",
+      "type": "timeline_violation",
+      "severity": "high",
+      "layer": "B",
+      "rule_id": "TL_NOC_AFTER_TRUST",
+      "entity": null,
+      "attribute": null,
+      "claims": [
+        {
+          "doc_id": "appx_application_form",
+          "entity": "trust:E-12345/PUNE",
+          "attribute": "reg_date",
+          "value": "2009-04-15",
+          "authority": "self_declared",
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null
+        },
+        {
+          "doc_id": "appx_noc",
+          "entity": "doc:appx_noc",
+          "attribute": "issue_date",
+          "value": "2008-06-10",
+          "authority": "third_party",
+          "confidence": 0.9,
+          "page": null,
+          "bbox": null
+        }
+      ],
+      "doc_ids": [
+        "appx_application_form",
+        "appx_noc"
+      ],
+      "message": "NOC dated 2008-06-10 is earlier than trust registration 2009-04-15",
+      "evidence": {
+        "before": "2009-04-15",
+        "after": "2008-06-10"
+      }
+    },
+    {
+      "finding_id": "f_8559cbcd",
+      "app_id": "appx",
+      "type": "unreadable",
+      "severity": "low",
+      "layer": "B",
+      "rule_id": "LAND_AREA_AGREE",
+      "entity": "land_parcel:45/2",
+      "attribute": "area",
+      "claims": [
+        {
+          "doc_id": "appx_affidavit",
+          "entity": "land_parcel:45/2",
+          "attribute": "area",
+          "value": 2.5,
+          "authority": "self_declared",
+          "confidence": 0.62,
+          "page": null,
+          "bbox": null
+        }
+      ],
+      "doc_ids": [
+        "appx_affidavit"
+      ],
+      "message": "area in affidavit could not be read reliably (confidence 0.62); please confirm it manually",
+      "evidence": {
+        "value": 2.5,
+        "confidence": 0.62,
+        "page": null,
+        "bbox": null
+      }
+    }
+  ],
+  "documents": [
+    {
+      "doc_id": "appx_affidavit",
+      "overall": "manual_review_required",
+      "verification": null,
+      "note": "Area in affidavit could not be read reliably (confidence 0.62); please confirm it manually.",
+      "finding_ids": [
+        "f_8559cbcd"
+      ]
+    },
+    {
+      "doc_id": "appx_application_form",
+      "overall": "flagged",
+      "verification": null,
+      "note": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed; Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'.",
+      "finding_ids": [
+        "f_19f170b0",
+        "f_0dc00271",
+        "f_6b4eb574"
+      ]
+    },
+    {
+      "doc_id": "appx_land_deed",
+      "overall": "flagged",
+      "verification": null,
+      "note": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed; Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'.",
+      "finding_ids": [
+        "f_19f170b0",
+        "f_0dc00271"
+      ]
+    },
+    {
+      "doc_id": "appx_noc",
+      "overall": "flagged",
+      "verification": null,
+      "note": "NOC expires on 2027-12-31 before the academic year ends (2028-06-30); NOC dated 2008-06-10 is earlier than trust registration 2009-04-15.",
+      "finding_ids": [
+        "f_f597585b",
+        "f_6b4eb574"
+      ]
+    }
+  ]
+}
