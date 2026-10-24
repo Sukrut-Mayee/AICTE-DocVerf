@@ -35,10 +35,12 @@ def normalize_id(value: str) -> str:
     return re.sub(r"\s+", "", value).lower()
 
 
-def names_match(a: str, b: str) -> bool:
-    """RapidFuzz token_sort_ratio >= NAME_MATCH_THRESHOLD on normalized names."""
-    score = fuzz.token_sort_ratio(normalize_name(a), normalize_name(b))
-    return score >= get_settings().NAME_MATCH_THRESHOLD
+def names_match(a: str, b: str, threshold: float | None = None) -> bool:
+    """RapidFuzz token_sort_ratio >= threshold on normalized names. The default is
+    NAME_MATCH_THRESHOLD; a rule's own `fuzzy` value overrides it."""
+    if threshold is None:
+        threshold = get_settings().NAME_MATCH_THRESHOLD
+    return fuzz.token_sort_ratio(normalize_name(a), normalize_name(b)) >= threshold
 
 
 def to_acres(value: float, unit: str | None) -> float:

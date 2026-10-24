@@ -1,6 +1,11 @@
 """Claims and entity-graph consistency checks (TRD §7.2, §8.1-§8.3)."""
 
-from docverf.reasoning.entity_resolution import normalize_id, to_acres
+from collections.abc import Callable
+from typing import Any
+
+from docverf.config import get_settings
+from docverf.reasoning.entity_resolution import names_match, normalize_id, to_acres
+from docverf.reasoning.rule_engine import load_rules, new_finding
 from docverf.schemas import (
     AuthorityTier,
     CheckResult,
@@ -8,6 +13,8 @@ from docverf.schemas import (
     DocType,
     ExtractionResult,
     Finding,
+    FindingType,
+    Severity,
     VerificationStatus,
 )
 
@@ -112,6 +119,164 @@ def build_claims(extractions: list[ExtractionResult], checks: list[CheckResult])
     return claims
 
 
-def graph_checks(claims: list[Claim]) -> list[Finding]:
-    """Evaluate rules/graph/*.yaml: attribute_agree and relationship_equal (§8.2, §8.3)."""
-    raise NotImplementedError
+SEVERITY_RANK = {Severity.INFO: 0, Severity.LOW: 1, Severity.MEDIUM: 2, Severity.HIGH: 3}
+
+
+def _pair_severity(a: AuthorityTier, b: AuthorityTier) -> Severity:
+    """TRD §8.3: issuer_verified vs anything, or third_party vs self_declared -> high;
+    two claims of the same tier (third/third, self/self) -> medium."""
+    if AuthorityTier.ISSUER_VERIFIED in (a, b) or a != b:
+        return Severity.HIGH
+    return Severity.MEDIUM
+
+
+def _matcher(tolerance: dict[str, Any]) -> Callable[[Any, Any], bool]:
+    """Turn a graph rule's tolerance (relative / fuzzy / exact) into an 'agree?' function.
+    Area claims are already in acres (build_claims), so the rule's `unit` needs no conversion."""
+    if "relative" in tolerance:
+        return lambda a, b: abs(a - b) <= tolerance["relative"] * max(abs(a), abs(b))
+    if "fuzzy" in tolerance:
+        return lambda a, b: names_match(str(a), str(b), tolerance["fuzzy"])
+    if tolerance.get("exact"):
+        return lambda a, b: normalize_id(str(a)) == normalize_id(str(b))
+    raise ValueError(f"unsupported tolerance {tolerance!r}")
+
+
+def graph_checks(app_id: str, claims: list[Claim]) -> list[Finding]:
+    """Evaluate rules/graph/*.yaml: attribute_agree and relationship_equal (§8.2, §8.3).
+
+    Claims below CONFIDENCE_THRESHOLD never take part in a comparison; each gives one
+    `unreadable` finding, however many rules look at it. Too few usable claims gives an
+    `undetermined` info finding, never a conflict."""
+    threshold = get_settings().CONFIDENCE_THRESHOLD
+    findings: list[Finding] = []
+    reported: set[tuple[str, str, str]] = set()
+
+    def label(doc_id: str) -> str:
+        return doc_id.removeprefix(f"{app_id}_")
+
+    def usable(rule: dict[str, Any], entity_type: str, attribute: str) -> tuple[list, list]:
+        """(all claims for entity_type.attribute, the confident ones)."""
+        selected = [
+            c for c in claims if c.entity.startswith(f"{entity_type}:") and c.attribute == attribute
+        ]
+        keep = [c for c in selected if c.confidence >= threshold]
+        for c in selected:
+            key = (c.doc_id, c.entity, c.attribute)
+            if c.confidence < threshold and key not in reported:
+                reported.add(key)
+                findings.append(
+                    new_finding(
+                        app_id,
+                        rule,
+                        f"{c.attribute} in {label(c.doc_id)} could not be read reliably "
+                        f"(confidence {c.confidence:.2f}); please confirm it manually",
+                        ftype=FindingType.UNREADABLE,
+                        severity=Severity.LOW,
+                        doc_ids=[c.doc_id],
+                        entity=c.entity,
+                        attribute=c.attribute,
+                        claims=[c],
+                        evidence={
+                            "value": c.value,
+                            "confidence": c.confidence,
+                            "page": c.page,
+                            "bbox": c.bbox,
+                        },
+                    )
+                )
+        return selected, keep
+
+    def undetermined(rule: dict[str, Any], selected: list[Claim], why: str) -> Finding:
+        return new_finding(
+            app_id,
+            rule,
+            f"Cannot check {rule['id']}: {why}",
+            ftype=FindingType.UNDETERMINED,
+            severity=Severity.INFO,
+            doc_ids=list(dict.fromkeys(c.doc_id for c in selected)),
+            entity=selected[0].entity,
+            attribute=selected[0].attribute,
+            claims=selected,
+        )
+
+    for rule in load_rules("graph"):
+        rule = {"layer": "B", **rule}  # graph checks are Layer B (consistency)
+        same = _matcher(rule["tolerance"])
+        if rule["type"] == "attribute_agree":
+            selected, keep = usable(rule, rule["entity_type"], rule["attribute"])
+            need = rule.get("min_claims", 2)
+            if len(keep) < need:
+                if selected:  # nothing asserted at all means nothing to check
+                    why = f"only {len(keep)} readable claim(s), {need} needed"
+                    findings.append(undetermined(rule, selected, why))
+                continue
+            clusters: list[list[Claim]] = []
+            for c in keep:
+                for cluster in clusters:
+                    if same(cluster[0].value, c.value):
+                        cluster.append(c)
+                        break
+                else:
+                    clusters.append([c])
+            if len(clusters) > 1:
+                severity = max(
+                    (
+                        _pair_severity(x.authority, y.authority)
+                        for i, ca in enumerate(clusters)
+                        for cb in clusters[i + 1 :]
+                        for x in ca
+                        for y in cb
+                    ),
+                    key=SEVERITY_RANK.__getitem__,
+                    default=Severity.INFO,
+                )
+                kind = rule["entity_type"].replace("_", " ")
+                shown = " vs ".join(
+                    f"{cl[0].value} in {', '.join(label(c.doc_id) for c in cl)}" for cl in clusters
+                )
+                findings.append(
+                    new_finding(
+                        app_id,
+                        rule,
+                        f"{kind.capitalize()} {rule['attribute']} conflicts: {shown}",
+                        ftype=FindingType.ATTRIBUTE_CONFLICT,
+                        severity=severity,
+                        doc_ids=list(dict.fromkeys(c.doc_id for c in keep)),
+                        entity=keep[0].entity,
+                        attribute=rule["attribute"],
+                        claims=keep,
+                        evidence={
+                            "clusters": [
+                                {"value": cl[0].value, "doc_ids": [c.doc_id for c in cl]}
+                                for cl in clusters
+                            ]
+                        },
+                    )
+                )
+        elif rule["type"] == "relationship_equal":
+            l_sel, l_keep = usable(rule, **rule["left"])
+            r_sel, r_keep = usable(rule, **rule["right"])
+            if not (l_keep and r_keep):
+                if l_sel or r_sel:
+                    side = "left" if not l_keep else "right"
+                    findings.append(undetermined(rule, l_sel + r_sel, f"no readable {side} claim"))
+                continue
+            for left in l_keep:
+                for right in r_keep:
+                    if not same(left.value, right.value):
+                        findings.append(
+                            new_finding(
+                                app_id,
+                                rule,
+                                rule["message"].format(left=left.value, right=right.value),
+                                ftype=FindingType.RELATIONSHIP_VIOLATION,
+                                doc_ids=[left.doc_id, right.doc_id],
+                                entity=left.entity,
+                                attribute=left.attribute,
+                                claims=[left, right],
+                            )
+                        )
+        else:
+            raise ValueError(f"unsupported graph rule type {rule['type']!r} in {rule['id']}")
+    return findings
