@@ -14,16 +14,18 @@ P = "x"  # path arguments are str (TRD §19 Q1)
 PP = Path("x")  # synthetic/eval stubs still take Path
 
 
-def test_provenance():
+def test_provenance(tmp_path):
     from docverf.provenance.hashing import hash_file
 
-    with pytest.raises(NotImplementedError):
-        hash_file(P)
+    p = tmp_path / "real.bin"
+    p.write_bytes(b"placeholder content")
+    result = hash_file(str(p))
+    assert isinstance(result, dict) and {"sha256", "phash"} <= set(result)
 
     from docverf.provenance.duplicates import check_duplicates
 
-    with pytest.raises(NotImplementedError):
-        check_duplicates("app001", "app001_noc", {"sha256": "0"}, {})
+    results = check_duplicates("app001", "app001_noc", {"sha256": "0"}, {})
+    assert isinstance(results, list)
 
 
 def test_extraction():
@@ -35,11 +37,15 @@ def test_extraction():
         extract(P, "app001_noc", "app001", DocType.NOC)
 
 
-def test_forensics():
+def test_forensics(tmp_path):
     from docverf.forensics.ela import run_ela
 
-    with pytest.raises(NotImplementedError):
-        run_ela(P, "app001_noc")
+    p = tmp_path / "real.png"
+    from PIL import Image
+
+    Image.new("RGB", (10, 10), color="white").save(str(p))
+    result = run_ela(str(p), "app001_noc")
+    assert result.check == "ela"
 
 
 def test_reasoning():
@@ -61,15 +67,36 @@ def test_verification():
         MockIssuerConnector().lookup("FIRE/MH/2026/123456", {})
 
 
-def test_ledger():
+def test_ledger(tmp_path, monkeypatch):
+    import os
+    import tempfile
+
     from docverf.ledger.audit_log import append
 
-    with pytest.raises(NotImplementedError):
-        append("decision", {})
+    fd, path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    try:
+        monkeypatch.setenv("DATABASE_URL", f"sqlite:///{path}")
+        from docverf.config import get_settings
 
-    from docverf.ledger.anchor import anchor_root
+        get_settings.cache_clear()
+        entry = append("decision", {})
+        assert entry.seq == 0
+        assert entry.hash is not None
+        from docverf.ledger.audit_log import verify_chain
 
-    with pytest.raises(NotImplementedError):
+        assert verify_chain() is True
+        get_settings.cache_clear()
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+
+    from docverf.ledger.anchor import AnchorUnavailableError, anchor_root
+
+    # No contract address configured -> anchor_root must raise, not return a hash.
+    with pytest.raises(AnchorUnavailableError):
         anchor_root(0, "0" * 64)
 
 
