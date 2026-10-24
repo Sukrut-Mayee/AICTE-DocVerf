@@ -3,7 +3,7 @@
   "priority": 401,
   "findings": [
     {
-      "finding_id": "f_ff896ea9",
+      "finding_id": "f_40433582",
       "app_id": "appx",
       "type": "expired",
       "severity": "high",
@@ -17,6 +17,7 @@
       ],
       "message": "NOC expires on 2027-12-31 before the academic year ends (2028-06-30)",
       "evidence": {
+        "rule_description": "NOC must be valid until the end of the academic year",
         "field": "valid_until",
         "value": "2027-12-31",
         "confidence": 0.9,
@@ -26,7 +27,7 @@
       }
     },
     {
-      "finding_id": "f_60aba3c4",
+      "finding_id": "f_14c233c4",
       "app_id": "appx",
       "type": "attribute_conflict",
       "severity": "high",
@@ -67,6 +68,7 @@
       ],
       "message": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed",
       "evidence": {
+        "rule_description": "All documents must state the same land area",
         "clusters": [
           {
             "value": 2.5,
@@ -84,7 +86,7 @@
       }
     },
     {
-      "finding_id": "f_0b46b2be",
+      "finding_id": "f_bb3c0643",
       "app_id": "appx",
       "type": "relationship_violation",
       "severity": "high",
@@ -124,10 +126,12 @@
         "appx_application_form"
       ],
       "message": "Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'",
-      "evidence": {}
+      "evidence": {
+        "rule_description": "The land must be owned by the applicant trust"
+      }
     },
     {
-      "finding_id": "f_41bfeffb",
+      "finding_id": "f_2b158f48",
       "app_id": "appx",
       "type": "timeline_violation",
       "severity": "high",
@@ -163,12 +167,13 @@
       ],
       "message": "NOC dated 2008-06-10 is earlier than trust registration 2009-04-15",
       "evidence": {
+        "rule_description": "NOC must be issued after the trust was registered",
         "before": "2009-04-15",
         "after": "2008-06-10"
       }
     },
     {
-      "finding_id": "f_5f490518",
+      "finding_id": "f_f753e0b6",
       "app_id": "appx",
       "type": "unreadable",
       "severity": "low",
@@ -193,6 +198,7 @@
       ],
       "message": "area in affidavit could not be read reliably (confidence 0.62); please confirm it manually",
       "evidence": {
+        "rule_description": "All documents must state the same land area",
         "value": 2.5,
         "confidence": 0.62,
         "page": null,
@@ -207,7 +213,7 @@
       "verification": null,
       "note": "Area in affidavit could not be read reliably (confidence 0.62); please confirm it manually.",
       "finding_ids": [
-        "f_5f490518"
+        "f_f753e0b6"
       ]
     },
     {
@@ -216,9 +222,9 @@
       "verification": null,
       "note": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed; Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'.",
       "finding_ids": [
-        "f_60aba3c4",
-        "f_0b46b2be",
-        "f_41bfeffb"
+        "f_14c233c4",
+        "f_bb3c0643",
+        "f_2b158f48"
       ]
     },
     {
@@ -227,8 +233,8 @@
       "verification": null,
       "note": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed; Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'.",
       "finding_ids": [
-        "f_60aba3c4",
-        "f_0b46b2be"
+        "f_14c233c4",
+        "f_bb3c0643"
       ]
     },
     {
@@ -237,8 +243,8 @@
       "verification": null,
       "note": "NOC expires on 2027-12-31 before the academic year ends (2028-06-30); NOC dated 2008-06-10 is earlier than trust registration 2009-04-15.",
       "finding_ids": [
-        "f_ff896ea9",
-        "f_41bfeffb"
+        "f_40433582",
+        "f_2b158f48"
       ]
     }
   ]

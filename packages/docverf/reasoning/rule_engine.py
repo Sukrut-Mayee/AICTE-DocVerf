@@ -59,7 +59,10 @@ def new_finding(
     severity: Severity | None = None,
     **fields: Any,
 ) -> Finding:
-    """Build a Finding from a rule's YAML header; ftype/severity override it (undetermined)."""
+    """Build a Finding from a rule's YAML header; ftype/severity override it (undetermined).
+
+    The rule's plain-English description is added to the evidence so a UI can show it."""
+    evidence = {"rule_description": rule_title(rule), **fields.pop("evidence", {})}
     return Finding(
         finding_id=new_finding_id(),
         app_id=app_id,
@@ -68,6 +71,7 @@ def new_finding(
         layer=Layer(rule["layer"]) if "layer" in rule else None,
         rule_id=rule["id"],
         message=message,
+        evidence=evidence,
         **fields,
     )
 
