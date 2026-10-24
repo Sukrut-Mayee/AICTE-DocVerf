@@ -10,7 +10,7 @@ from docverf.reasoning.entity_resolution import (
     normalize_id,
     to_acres,
 )
-from docverf.reasoning.rule_engine import load_rules, new_finding, new_finding_id
+from docverf.reasoning.rule_engine import load_rules, new_finding, new_finding_id, rule_title
 from docverf.schemas import (
     AuthorityTier,
     CheckResult,
@@ -238,7 +238,7 @@ def graph_checks(app_id: str, claims: list[Claim]) -> list[Finding]:
         return new_finding(
             app_id,
             rule,
-            f"Cannot check {rule['id']}: {why}",
+            f'Cannot check "{rule_title(rule)}": {why}',
             ftype=FindingType.UNDETERMINED,
             severity=Severity.INFO,
             doc_ids=list(dict.fromkeys(c.doc_id for c in selected)),

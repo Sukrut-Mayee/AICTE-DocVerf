@@ -21,18 +21,18 @@ FORM, DEED, NOC, AFFIDAVIT = (
     f"appx_{d}" for d in ("application_form", "land_deed", "noc", "affidavit")
 )
 RULE_IDS = [
-    "NOC_VALID_FOR_YEAR", "NOC_REF_FORMAT", "LAND_NOT_MORTGAGED", "REQUIRED_DOCS",
+    "NOC_VALID_FOR_YEAR", "NOC_REF_FORMAT", "LAND_NOT_MORTGAGED", "REQUIRED_DOCS", "TER_PAID",
     "LAND_AREA_AGREE", "INSTITUTE_NAME_AGREE", "SURVEY_NO_AGREE", "OWNER_IS_TRUST",
     "TL_NOC_AFTER_TRUST", "TL_NOC_ISSUE_BEFORE_EXPIRY", "TL_DEED_BEFORE_APPLICATION",
     "TL_AFFIDAVIT_IN_WINDOW",
 ]  # fmt: skip
 
 
-def simulate(app, exclude, checks=(), edit=None):
+def simulate(app, exclude, checks=(), edit=None, aicte_records=None):
     docs = load_app(app)
     if edit:
         edit({d.doc_type.value: d for d in docs})
-    result = simulate_exclusion("appx", docs, list(checks), exclude)
+    result = simulate_exclusion("appx", docs, list(checks), exclude, aicte_records)
     return result, {c["rule_id"]: c for c in result["conclusions"]}
 
 
@@ -49,6 +49,7 @@ def test_excluding_form_and_affidavit():
         "NOC_REF_FORMAT": ("pass", "pass", "still_supported"),
         "LAND_NOT_MORTGAGED": ("pass", "pass", "still_supported"),
         "REQUIRED_DOCS": ("pass", "fail", "now_failing"),  # both are required documents
+        "TER_PAID": ("pass", "undetermined", "now_uncertain"),  # the reference is on the form
         "LAND_AREA_AGREE": ("fail", "undetermined", "now_uncertain"),
         "INSTITUTE_NAME_AGREE": ("pass", "undetermined", "now_uncertain"),  # only the NOC left
         "SURVEY_NO_AGREE": ("pass", "undetermined", "now_uncertain"),
@@ -70,7 +71,8 @@ def test_excluding_form_and_affidavit():
         "Required document 'affidavit' is missing."
     )
     assert rules["TL_NOC_AFTER_TRUST"]["message"] == (
-        "Rule TL_NOC_AFTER_TRUST can no longer be checked: the application form was removed."
+        'Rule "NOC must be issued after the trust was registered" '
+        "can no longer be checked: the application form was removed."
     )
 
 
@@ -138,7 +140,8 @@ def test_document_missing_from_the_start_is_undetermined_before_and_after():
     rules = {c["rule_id"]: c for c in result["conclusions"]}
     assert moves(rules)["LAND_NOT_MORTGAGED"] == ("undetermined", "undetermined", "still_uncertain")
     assert rules["LAND_NOT_MORTGAGED"]["message"] == (
-        "Rule LAND_NOT_MORTGAGED still cannot be checked: no source document is available."
+        'Rule "Land must be free of any mortgage" still cannot be checked: '
+        "no source document is available."
     )
 
 
@@ -191,3 +194,14 @@ def test_cli_exclude_unknown_id_is_a_usage_error(tmp_path):
     with pytest.raises(SystemExit) as exc:
         main([str(FIXTURES / "app_conflict"), "--exclude", "appx_nope", "--out", str(tmp_path)])
     assert exc.value.code == 2
+
+
+def test_ter_payment_check_is_simulated_with_the_same_records():
+    unpaid = {"payments": {"TER2027000123": {"paid": False}}}
+    _, rules = simulate("app_clean", [AFFIDAVIT], aicte_records=unpaid)
+    assert moves(rules)["TER_PAID"] == ("fail", "fail", "still_failing")
+    assert rules["TER_PAID"]["message"] == (
+        "Still fails: TER payment reference 'TER2027000123' is not recorded as paid."
+    )
+    _, rules = simulate("app_clean", [FORM], aicte_records=unpaid)  # the reference is on the form
+    assert moves(rules)["TER_PAID"] == ("fail", "undetermined", "now_uncertain")

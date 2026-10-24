@@ -1,18 +1,25 @@
 - id: TL_NOC_AFTER_TRUST
+  description: "NOC must be issued after the trust was registered"
   before: trust.reg_date
   after: noc.issue_date
   severity: high
   message: "NOC dated {after} is earlier than trust registration {before}"
 - id: TL_NOC_ISSUE_BEFORE_EXPIRY
+  description: "NOC must be issued before it expires"
   before: noc.issue_date
   after: noc.valid_until
   severity: high
+  message: "NOC expires on {after}, before its issue date {before}"
 - id: TL_DEED_BEFORE_APPLICATION
+  description: "Land deed must be registered before the application is made"
   before: land_deed.registration_date
   after: form.application_date
   severity: medium
+  message: "Application is dated {after}, before the land deed was registered on {before}"
 - id: TL_AFFIDAVIT_IN_WINDOW
+  description: "Affidavit must be dated within the application window"
   within: affidavit.date
   start: config.APPLICATION_WINDOW_START
   end: config.APPLICATION_WINDOW_END
   severity: medium
+  message: "Affidavit is dated {value}, outside the application window {start} to {end}"

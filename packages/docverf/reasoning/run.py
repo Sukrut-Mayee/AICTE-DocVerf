@@ -1,5 +1,7 @@
 """Reasoning entry points (TRD §8.7)."""
 
+from typing import Any
+
 from docverf.reasoning.entity_graph import (
     FIELD_MAP,
     SEVERITY_RANK,
@@ -120,23 +122,32 @@ def dedupe(app_id: str, findings: list[Finding]) -> list[Finding]:
 
 
 def evaluate_rules(
-    app_id: str, extractions: list[ExtractionResult], checks: list[CheckResult]
+    app_id: str,
+    extractions: list[ExtractionResult],
+    checks: list[CheckResult],
+    aicte_records: dict[str, Any] | None = None,
 ) -> list[Finding]:
     """Findings of every YAML rule: rules, graph checks and timeline, before de-duplication."""
     claims = build_claims(extractions, checks)
     return [
-        *run_rules(app_id, extractions, load_checklist("eoa"), {}),  # {}: no AICTE records yet (P1)
+        *run_rules(app_id, extractions, load_checklist("eoa"), aicte_records),
         *graph_checks(app_id, claims),
         *timeline_checks(app_id, claims),
     ]
 
 
 def run_reasoning(
-    app_id: str, extractions: list[ExtractionResult], checks: list[CheckResult]
+    app_id: str,
+    extractions: list[ExtractionResult],
+    checks: list[CheckResult],
+    aicte_records: dict[str, Any] | None = None,
 ) -> list[Finding]:
-    """Run rules, graph checks and timeline, add findings from the checks, drop duplicates."""
+    """Run rules, graph checks and timeline, add findings from the checks, drop duplicates.
+
+    `aicte_records` are records the pipeline fetched (e.g. {"payments": {txn_id: {...}}}); rules
+    that need records which are absent skip that check. Nothing here touches the network."""
     findings = [
-        *evaluate_rules(app_id, extractions, checks),
+        *evaluate_rules(app_id, extractions, checks, aicte_records),
         *unit_findings(app_id, extractions),
         *checks_to_findings(app_id, checks),
     ]

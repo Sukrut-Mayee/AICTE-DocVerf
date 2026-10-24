@@ -390,3 +390,19 @@ def test_unknown_unit_finding_reaches_the_document_status():
     deed = next(s for s in statuses if s.doc_id == "appx_land_deed")
     assert deed.overall is DocOverallStatus.NO_ISSUES and priority == 0  # info only
     assert "unknown area unit 'bigha'" in deed.note
+
+
+def test_run_reasoning_passes_aicte_records_to_the_rules():
+    docs = load_app("app_clean")
+    unpaid = {"payments": {"TER2027000123": {"paid": False}}}
+    findings = run_reasoning("appx", docs, [], unpaid)
+    assert triples(findings) == {("TER_PAID", "rule_failed", "high")}
+    assert run_reasoning("appx", docs, []) == []  # records not fetched: nothing to report
+    assert run_reasoning("appx", docs, [], {"payments": {"TER2027000123": {"paid": True}}}) == []
+    _, priority = aggregate("appx", findings, [], [d.doc_id for d in docs])
+    assert priority == 100
+
+
+def test_appendix_a_is_unchanged_by_records_that_show_payment():
+    paid = {"payments": {"TER2027000123": {"paid": True}}}
+    assert len(run_reasoning("appx", load_app("app_conflict"), [], paid)) == 5

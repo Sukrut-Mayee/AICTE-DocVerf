@@ -69,10 +69,7 @@ def test_issue_after_expiry_is_a_violation():
 
     findings = timeline("app_clean", edit)
     assert summary(findings) == [("timeline_violation", "high", "TL_NOC_ISSUE_BEFORE_EXPIRY")]
-    assert (
-        findings[0].message
-        == "noc.valid_until 2025-01-01 is earlier than noc.issue_date 2025-11-10"
-    )
+    assert findings[0].message == "NOC expires on 2025-01-01, before its issue date 2025-11-10"
 
 
 @pytest.mark.parametrize(
@@ -87,7 +84,8 @@ def test_affidavit_must_fall_in_application_window(day, bad):
     )
     if bad:
         assert (
-            findings[0].message == "affidavit.date 2027-04-01 is outside 2026-12-01 to 2027-03-31"
+            findings[0].message == "Affidavit is dated 2027-04-01, "
+            "outside the application window 2026-12-01 to 2027-03-31"
         )
 
 
@@ -103,3 +101,22 @@ def test_window_comes_from_config(monkeypatch):
     finally:
         monkeypatch.delenv("APPLICATION_WINDOW_END")
         get_settings.cache_clear()
+
+
+def test_deed_registered_after_the_application_is_a_violation():
+    def edit(d):
+        d["land_deed"].fields["registration_date"].value = "2027-02-01"  # application: 2027-01-20
+
+    findings = timeline("app_clean", edit)
+    assert summary(findings) == [("timeline_violation", "medium", "TL_DEED_BEFORE_APPLICATION")]
+    assert findings[0].message == (
+        "Application is dated 2027-01-20, before the land deed was registered on 2027-02-01"
+    )
+
+
+def test_undetermined_message_names_the_rule_in_plain_english():
+    findings = timeline("app_conflict", lambda d: d["noc"].fields.pop("issue_date"))
+    assert findings[0].message == (
+        'Cannot check "NOC must be issued after the trust was registered": '
+        "noc.issue_date is missing"
+    )

@@ -247,3 +247,15 @@ def test_unreadable_owner_makes_relationship_undetermined():
         ("unreadable", "low", "OWNER_IS_TRUST"),
         ("undetermined", "info", "OWNER_IS_TRUST"),
     ]
+
+
+def test_undetermined_graph_message_uses_the_rule_description():
+    def only_form(docs):
+        set_field("affidavit", "land_area_declared", confidence=0.5)(docs)
+        set_field("land_deed", "area", confidence=0.5)(docs)
+
+    undetermined = [f for f in graph(edit=only_form) if f.type.value == "undetermined"]
+    assert [f.message for f in undetermined] == [
+        'Cannot check "All documents must state the same land area": '
+        "only 1 readable claim(s), 2 needed"
+    ]

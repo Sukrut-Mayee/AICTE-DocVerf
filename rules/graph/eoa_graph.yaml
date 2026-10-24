@@ -1,20 +1,24 @@
 - id: LAND_AREA_AGREE
+  description: "All documents must state the same land area"
   type: attribute_agree
   entity_type: land_parcel
   attribute: area
   tolerance: {relative: 0.01, unit: acre}
   min_claims: 2
 - id: INSTITUTE_NAME_AGREE
+  description: "All documents must name the same institute"
   type: attribute_agree
   entity_type: institute
   attribute: name
   tolerance: {fuzzy: 90}
 - id: SURVEY_NO_AGREE
+  description: "All documents must give the same survey number"
   type: attribute_agree
   entity_type: land_parcel
   attribute: survey_no
   tolerance: {exact: true}
 - id: OWNER_IS_TRUST
+  description: "The land must be owned by the applicant trust"
   type: relationship_equal
   left:  {entity_type: land_parcel, attribute: owner}
   right: {entity_type: trust, attribute: name}
