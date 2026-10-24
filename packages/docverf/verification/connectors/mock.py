@@ -1,9 +1,57 @@
 """Connector for services/mock_issuer (TRD §9.3)."""
 
+from datetime import datetime
+from typing import Any
+
 import httpx
 
 from docverf.config import get_settings
-from packages.docverf.schemas.models import Layer; from packages.docverf.schemas.models import Layer; from docverf.schemas import CheckResult, DocType, FieldValue, VerificationStatus
+from docverf.schemas import (
+    CheckResult,
+    CheckStatus,
+    DocType,
+    FieldValue,
+    Layer,
+    VerificationStatus,
+)
+
+
+def _check_status(verification_status: VerificationStatus) -> CheckStatus:
+    if verification_status == VerificationStatus.VERIFIED:
+        return CheckStatus.VERIFIED
+    if verification_status in {
+        VerificationStatus.MISMATCH_DETECTED,
+        VerificationStatus.EXPIRED,
+    }:
+        return CheckStatus.MISMATCH
+    if verification_status == VerificationStatus.MANUAL_REVIEW_REQUIRED:
+        return CheckStatus.SUSPICIOUS
+    if verification_status == VerificationStatus.VERIFICATION_PENDING:
+        return CheckStatus.NOT_APPLICABLE
+    return CheckStatus.ERROR
+
+
+def _result(
+    doc_id: str,
+    reason: str,
+    verification_status: VerificationStatus,
+    *,
+    severity: str = "info",
+    source: str = "mock_issuer_api",
+    evidence: dict[str, Any] | None = None,
+) -> CheckResult:
+    return CheckResult(
+        doc_id=doc_id,
+        layer=Layer.A,
+        check="issuer_lookup",
+        status=_check_status(verification_status),
+        severity=severity,
+        reason=reason,
+        verification_status=verification_status,
+        source=source,
+        checked_at=datetime.now().astimezone(),
+        evidence=evidence if evidence is not None else {},
+    )
 
 
 class MockIssuerConnector:
@@ -22,99 +70,78 @@ class MockIssuerConnector:
         base_url = settings.MOCK_ISSUER_URL.rstrip("/")
         url = f"{base_url}/noc/{ref_no}"
 
-        timeout = settings.SOURCE_TIMEOUT_S if hasattr(settings, "SOURCE_TIMEOUT_S") else 5.0
+        timeout = (
+            settings.SOURCE_TIMEOUT_S
+            if hasattr(settings, "SOURCE_TIMEOUT_S")
+            else 5.0
+        )
 
         try:
             with httpx.Client(timeout=timeout) as client:
                 response = client.get(url)
 
             if response.status_code == 404:
-                return CheckResult(
-                    doc_id=f"noc_unknown",
-                    layer=Layer.A,
-                    check="issuer_lookup",
-                    status="source_unavailable",
+                return _result(
+                    "noc_unknown",
+                    f"NOC reference {ref_no} not found in issuer service",
+                    VerificationStatus.SOURCE_UNAVAILABLE,
                     severity="high",
-                    reason=f"NOC reference {ref_no} not found in issuer service",
-                    verification_status=VerificationStatus.SOURCE_UNAVAILABLE,
-                    source="mock_issuer_api",
-                    checked_at="2026-10-24T10:00:00Z",
                 )
 
             if response.status_code != 200:
-                return CheckResult(
-                    doc_id=f"noc_error",
-                    layer=Layer.A,
-                    check="issuer_lookup",
-                    status="error",
+                return _result(
+                    "noc_error",
+                    f"Mock issuer API returned status {response.status_code}",
+                    VerificationStatus.SOURCE_UNAVAILABLE,
                     severity="high",
-                    reason=f"Mock issuer API returned status {response.status_code}",
-                    verification_status=VerificationStatus.SOURCE_UNAVAILABLE,
-                    source="mock_issuer_api",
-                    checked_at="2026-10-24T10:00:00Z",
                 )
 
             data = response.json()
-            # Determine verification status from API response
-            status = data.get("verification_status", "verified")
-            if status not in {
-                "verified",
-                "mismatch_detected",
-                "expired",
-                "verification_pending",
-                "source_unavailable",
-                "manual_review_required",
-            }:
-                status = "verified"
-
-            return CheckResult(
-                doc_id=data.get("doc_id", f"noc_{ref_no}"),
-                layer=Layer.A,
-                check="issuer_lookup",
-                status=status,
-                severity="info",
-                reason=data.get("reason", f"Issuer lookup for {ref_no}"),
-                verification_status=VerificationStatus(status),
+            verification_status = VerificationStatus(data["verification_status"])
+            return _result(
+                data.get("doc_id", f"noc_{ref_no}"),
+                data.get("reason", f"Issuer lookup for {ref_no}"),
+                verification_status,
+                severity=(
+                    "high"
+                    if verification_status
+                    in {
+                        VerificationStatus.MISMATCH_DETECTED,
+                        VerificationStatus.EXPIRED,
+                    }
+                    else "info"
+                ),
                 source=data.get("source", "mock_issuer_api"),
-                checked_at=data.get("checked_at", "2026-10-24T10:00:00Z"),
                 evidence=data.get("evidence", {}),
             )
 
         except httpx.TimeoutException:
-            return CheckResult(
-                doc_id=f"noc_timeout",
-                layer=Layer.A,
-                check="issuer_lookup",
-                status="timeout",
-                severity="high",
-                reason=f"Mock issuer API timeout for {ref_no} (>{timeout}s)",
-                verification_status=VerificationStatus.VERIFICATION_PENDING,
-                source="mock_issuer_api",
-                checked_at="2026-10-24T10:00:00Z",
+            return _result(
+                "noc_timeout",
+                f"Mock issuer API timeout for {ref_no} (>{timeout}s)",
+                VerificationStatus.VERIFICATION_PENDING,
+                severity="info",
             )
 
         except httpx.ConnectError:
-            return CheckResult(
-                doc_id=f"noc_unreachable",
-                layer=Layer.A,
-                check="issuer_lookup",
-                status="error",
+            return _result(
+                "noc_unreachable",
+                f"Mock issuer API unreachable at {url}",
+                VerificationStatus.SOURCE_UNAVAILABLE,
                 severity="high",
-                reason=f"Mock issuer API unreachable at {url}",
-                verification_status=VerificationStatus.SOURCE_UNAVAILABLE,
-                source="mock_issuer_api",
-                checked_at="2026-10-24T10:00:00Z",
             )
 
-        except Exception as exc:
-            return CheckResult(
-                doc_id=f"noc_error",
-                layer=Layer.A,
-                check="issuer_lookup",
-                status="error",
+        except httpx.RequestError as exc:
+            return _result(
+                "noc_unreachable",
+                f"Mock issuer API request failed: {exc}",
+                VerificationStatus.SOURCE_UNAVAILABLE,
                 severity="high",
-                reason=f"Mock issuer API unexpected error: {exc}",
-                verification_status=VerificationStatus.SOURCE_UNAVAILABLE,
-                source="mock_issuer_api",
-                checked_at="2026-10-24T10:00:00Z",
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            return _result(
+                "noc_error",
+                f"Mock issuer API returned an invalid response: {exc}",
+                VerificationStatus.SOURCE_UNAVAILABLE,
+                severity="high",
             )
