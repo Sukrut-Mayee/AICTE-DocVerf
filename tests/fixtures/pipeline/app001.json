@@ -1,0 +1,612 @@
+{
+  "app_id": "app001",
+  "extractions": [
+    {
+      "doc_id": "app001_application_form",
+      "app_id": "app001",
+      "doc_type": "application_form",
+      "fields": {
+        "institute_name": {
+          "value": "Shree Vidya Institute of Technology",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "aicte_permanent_id": {
+          "value": "1-9876543",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "application_no": {
+          "value": "1-46200000001",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "trust_name": {
+          "value": "Shree Vidya Education Trust",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "trust_reg_no": {
+          "value": "E-12345/PUNE",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "trust_reg_date": {
+          "value": "2009-04-15",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "land_survey_no": {
+          "value": "45/2",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "land_area": {
+          "value": 2.5,
+          "unit": "acre",
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "application_date": {
+          "value": "2027-01-20",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "ter_txn_id": {
+          "value": "TER2027000123",
+          "unit": null,
+          "raw": null,
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        }
+      },
+      "regions": [],
+      "page_count": 1,
+      "engines": {},
+      "warnings": [
+        "Mock fixture seeded from tests/fixtures/apps/app_conflict; not produced by a live extraction run."
+      ]
+    },
+    {
+      "doc_id": "app001_land_deed",
+      "app_id": "app001",
+      "doc_type": "land_deed",
+      "fields": {
+        "owner_name": {
+          "value": "Shree Vidya Charitable Society",
+          "unit": null,
+          "raw": "श्री विद्या चॅरिटेबल सोसायटी",
+          "confidence": 0.88,
+          "page": 1,
+          "bbox": [
+            0.12,
+            0.3,
+            0.7,
+            0.34
+          ],
+          "extractor_agreement": true
+        },
+        "survey_no": {
+          "value": "45/2",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.95,
+          "page": 1,
+          "bbox": [
+            0.12,
+            0.36,
+            0.3,
+            0.39
+          ],
+          "extractor_agreement": true
+        },
+        "area": {
+          "value": 2.1,
+          "unit": "acre",
+          "raw": "2.10 एकर",
+          "confidence": 0.93,
+          "page": 1,
+          "bbox": [
+            0.12,
+            0.41,
+            0.35,
+            0.44
+          ],
+          "extractor_agreement": true
+        },
+        "registration_date": {
+          "value": "2010-02-03",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.9,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        },
+        "mortgage_status": {
+          "value": "none",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.85,
+          "page": null,
+          "bbox": null,
+          "extractor_agreement": null
+        }
+      },
+      "regions": [],
+      "page_count": 1,
+      "engines": {},
+      "warnings": [
+        "Mock fixture seeded from tests/fixtures/apps/app_conflict; not produced by a live extraction run."
+      ]
+    },
+    {
+      "doc_id": "app001_noc",
+      "app_id": "app001",
+      "doc_type": "noc",
+      "fields": {
+        "issuer": {
+          "value": "Maharashtra Fire Services",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.92,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.12,
+            0.8,
+            0.155
+          ],
+          "extractor_agreement": null
+        },
+        "ref_no": {
+          "value": "FIRE/MH/2008/004512",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.91,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.24,
+            0.62,
+            0.275
+          ],
+          "extractor_agreement": true
+        },
+        "institute_name": {
+          "value": "Shree Vidya Institute of Technology",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.94,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.18,
+            0.8,
+            0.215
+          ],
+          "extractor_agreement": null
+        },
+        "issue_date": {
+          "value": "2008-06-10",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.9,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.3,
+            0.42,
+            0.335
+          ],
+          "extractor_agreement": true
+        },
+        "valid_until": {
+          "value": "2027-12-31",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.9,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.36,
+            0.42,
+            0.395
+          ],
+          "extractor_agreement": true
+        }
+      },
+      "regions": [],
+      "page_count": 1,
+      "engines": {},
+      "warnings": [
+        "Mock fixture seeded from tests/fixtures/apps/app_conflict; not produced by a live extraction run."
+      ]
+    },
+    {
+      "doc_id": "app001_affidavit",
+      "app_id": "app001",
+      "doc_type": "affidavit",
+      "fields": {
+        "institute_name": {
+          "value": "Shree Vidya Inst. of Tech.",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.89,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.16,
+            0.8,
+            0.195
+          ],
+          "extractor_agreement": null
+        },
+        "application_no": {
+          "value": "1-46200000001",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.93,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.22,
+            0.62,
+            0.255
+          ],
+          "extractor_agreement": null
+        },
+        "date": {
+          "value": "2027-01-18",
+          "unit": null,
+          "raw": null,
+          "confidence": 0.92,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.28,
+            0.42,
+            0.315
+          ],
+          "extractor_agreement": null
+        },
+        "land_area_declared": {
+          "value": 2.5,
+          "unit": "acre",
+          "raw": null,
+          "confidence": 0.62,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.34,
+            0.55,
+            0.375
+          ],
+          "extractor_agreement": false
+        }
+      },
+      "regions": [],
+      "page_count": 1,
+      "engines": {},
+      "warnings": [
+        "Mock fixture seeded from tests/fixtures/apps/app_conflict; not produced by a live extraction run."
+      ]
+    }
+  ],
+  "checks": [],
+  "findings": [
+    {
+      "finding_id": "f_1a2b3c4d",
+      "app_id": "app001",
+      "type": "attribute_conflict",
+      "severity": "high",
+      "layer": "B",
+      "rule_id": "LAND_AREA_AGREE",
+      "entity": "land_parcel:45/2",
+      "attribute": "area",
+      "claims": [
+        {
+          "doc_id": "app001_application_form",
+          "entity": "land_parcel:45/2",
+          "attribute": "area",
+          "value": 2.5,
+          "authority": "self_declared",
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null
+        },
+        {
+          "doc_id": "app001_land_deed",
+          "entity": "land_parcel:45/2",
+          "attribute": "area",
+          "value": 2.1,
+          "authority": "third_party",
+          "confidence": 0.93,
+          "page": 1,
+          "bbox": [
+            0.12,
+            0.41,
+            0.35,
+            0.44
+          ]
+        }
+      ],
+      "doc_ids": [
+        "app001_application_form",
+        "app001_land_deed"
+      ],
+      "message": "Declared land area (2.5 acre) conflicts with the land deed (2.1 acre).",
+      "evidence": {
+        "rule": "LAND_AREA_AGREE",
+        "attribute": "land_parcel.area",
+        "values": {
+          "application_form": 2.5,
+          "land_deed": 2.1
+        },
+        "unit": "acre"
+      }
+    },
+    {
+      "finding_id": "f_2b3c4d5e",
+      "app_id": "app001",
+      "type": "relationship_violation",
+      "severity": "high",
+      "layer": "B",
+      "rule_id": "OWNER_IS_TRUST",
+      "entity": "land_parcel:45/2",
+      "attribute": "owner",
+      "claims": [
+        {
+          "doc_id": "app001_application_form",
+          "entity": "trust:E-12345/PUNE",
+          "attribute": "name",
+          "value": "Shree Vidya Education Trust",
+          "authority": "self_declared",
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null
+        },
+        {
+          "doc_id": "app001_land_deed",
+          "entity": "land_parcel:45/2",
+          "attribute": "owner",
+          "value": "Shree Vidya Charitable Society",
+          "authority": "third_party",
+          "confidence": 0.88,
+          "page": 1,
+          "bbox": [
+            0.12,
+            0.3,
+            0.7,
+            0.34
+          ]
+        }
+      ],
+      "doc_ids": [
+        "app001_application_form",
+        "app001_land_deed"
+      ],
+      "message": "The land deed owner (Shree Vidya Charitable Society) does not match the trust name on the application (Shree Vidya Education Trust).",
+      "evidence": {
+        "rule": "OWNER_IS_TRUST",
+        "attribute": "land_parcel.owner",
+        "values": {
+          "application_form.trust_name": "Shree Vidya Education Trust",
+          "land_deed.owner_name": "Shree Vidya Charitable Society"
+        }
+      }
+    },
+    {
+      "finding_id": "f_3c4d5e6f",
+      "app_id": "app001",
+      "type": "timeline_violation",
+      "severity": "high",
+      "layer": "B",
+      "rule_id": "TL_NOC_AFTER_TRUST",
+      "entity": "trust:E-12345/PUNE",
+      "attribute": "reg_date",
+      "claims": [
+        {
+          "doc_id": "app001_application_form",
+          "entity": "trust:E-12345/PUNE",
+          "attribute": "reg_date",
+          "value": "2009-04-15",
+          "authority": "self_declared",
+          "confidence": 1.0,
+          "page": null,
+          "bbox": null
+        },
+        {
+          "doc_id": "app001_noc",
+          "entity": "trust:E-12345/PUNE",
+          "attribute": "noc_issue_date",
+          "value": "2008-06-10",
+          "authority": "third_party",
+          "confidence": 0.9,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.3,
+            0.42,
+            0.335
+          ]
+        }
+      ],
+      "doc_ids": [
+        "app001_application_form",
+        "app001_noc"
+      ],
+      "message": "The fire NOC was issued before the trust was registered.",
+      "evidence": {
+        "rule": "TL_NOC_AFTER_TRUST",
+        "events": {
+          "noc.issue_date": "2008-06-10",
+          "trust.reg_date": "2009-04-15"
+        }
+      }
+    },
+    {
+      "finding_id": "f_4d5e6f70",
+      "app_id": "app001",
+      "type": "expired",
+      "severity": "high",
+      "layer": "B",
+      "rule_id": "NOC_VALID_FOR_YEAR",
+      "entity": "trust:E-12345/PUNE",
+      "attribute": "noc_valid_until",
+      "claims": [
+        {
+          "doc_id": "app001_noc",
+          "entity": "trust:E-12345/PUNE",
+          "attribute": "noc_valid_until",
+          "value": "2027-12-31",
+          "authority": "third_party",
+          "confidence": 0.9,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.36,
+            0.42,
+            0.395
+          ]
+        }
+      ],
+      "doc_ids": [
+        "app001_noc"
+      ],
+      "message": "The fire NOC expires before the end of the 2027-28 academic year.",
+      "evidence": {
+        "rule": "NOC_VALID_FOR_YEAR",
+        "valid_until": "2027-12-31",
+        "academic_year_end": "2028-06-30"
+      }
+    },
+    {
+      "finding_id": "f_5e6f7081",
+      "app_id": "app001",
+      "type": "unreadable",
+      "severity": "low",
+      "layer": null,
+      "rule_id": null,
+      "entity": "land_parcel:45/2",
+      "attribute": "area",
+      "claims": [
+        {
+          "doc_id": "app001_affidavit",
+          "entity": "land_parcel:45/2",
+          "attribute": "area",
+          "value": 2.5,
+          "authority": "self_declared",
+          "confidence": 0.62,
+          "page": 1,
+          "bbox": [
+            0.1,
+            0.34,
+            0.55,
+            0.375
+          ]
+        }
+      ],
+      "doc_ids": [
+        "app001_affidavit"
+      ],
+      "message": "The land area in the affidavit is low-confidence; confirm the value manually.",
+      "evidence": {
+        "reason": "extractors_disagree",
+        "confidence": 0.62,
+        "confidence_threshold": 0.75
+      }
+    }
+  ],
+  "documents": [
+    {
+      "doc_id": "app001_application_form",
+      "overall": "flagged",
+      "verification": null,
+      "note": "Land-area and trust-name conflicts involve this form.",
+      "finding_ids": [
+        "f_1a2b3c4d",
+        "f_2b3c4d5e",
+        "f_3c4d5e6f"
+      ]
+    },
+    {
+      "doc_id": "app001_land_deed",
+      "overall": "flagged",
+      "verification": null,
+      "note": "Deed area and owner conflict with the application.",
+      "finding_ids": [
+        "f_1a2b3c4d",
+        "f_2b3c4d5e"
+      ]
+    },
+    {
+      "doc_id": "app001_noc",
+      "overall": "flagged",
+      "verification": null,
+      "note": "NOC was issued before trust registration and expires before the academic year ends.",
+      "finding_ids": [
+        "f_3c4d5e6f",
+        "f_4d5e6f70"
+      ]
+    },
+    {
+      "doc_id": "app001_affidavit",
+      "overall": "manual_review_required",
+      "verification": null,
+      "note": "Land area is low-confidence; confirm manually.",
+      "finding_ids": [
+        "f_5e6f7081"
+      ]
+    }
+  ],
+  "priority": 401,
+  "audit": {
+    "seq": 0,
+    "hash": "f3d066ae3ac95301ad77ad4e933bb451dd02f2bc1fdc25538522f782fea349cc",
+    "tx": null
+  },
+  "meta": {
+    "source": "mock_fixture",
+    "fixture": "tests/fixtures/apps/app_conflict",
+    "note": "Hand-built from the TRD Appendix A expected findings. Extraction, checks, reasoning and anchoring were not re-run.",
+    "seeded_at": "2026-10-24T16:56:15+00:00"
+  }
+}
