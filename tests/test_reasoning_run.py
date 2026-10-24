@@ -186,7 +186,10 @@ def test_checks_to_findings_mapping(c, expected):
     (f,) = checks_to_findings("appx", [c])
     assert (f.type, f.severity) == expected
     assert (f.doc_ids, f.layer) == ([c.doc_id], c.layer)
-    assert f.evidence == {"check": c.check, "detail": 1}  # the check's evidence is kept
+    kept = {"check": c.check, "detail": 1}  # the check's evidence is kept
+    if c.check == "hash_duplicate":
+        kept["methods"] = ["unknown"]  # duplicates also record which hashes matched
+    assert f.evidence == kept
     if f.type is FindingType.FORENSIC_SIGNAL:
         assert f.message == f"Preliminary indicator: {c.reason}"
     assert "forged" not in f.message.lower() and "fake" not in f.message.lower()
@@ -435,3 +438,76 @@ def test_every_rule_based_finding_carries_its_rule_description():
     others = [f for f in findings if not f.rule_id]
     assert {f.type.value for f in others} == {"forensic_signal", "undetermined"}  # check + unit
     assert all("rule_description" not in f.evidence for f in others)
+
+
+# ---- duplicates: one finding per (document, document it duplicates) ----
+
+
+def dup_check(doc_id, hash_type, sources, status=CheckStatus.MISMATCH):
+    c = check(doc_id, "hash_duplicate", status, Severity.HIGH, layer=Layer.A)
+    c.evidence = {"hash_type": hash_type, "hash_value": f"{hash_type}-value", "duplicates": sources}
+    c.reason = (
+        f"Duplicate document detected ({hash_type} match) in {len(sources)} other application(s)"
+    )
+    return c
+
+
+def test_exact_copy_matched_by_both_hashes_gives_one_finding():
+    source = [("app014", "app014_lab_photo_2")]
+    checks = [
+        dup_check("app017_lab_photo_1", "phash", source),
+        dup_check("app017_lab_photo_1", "sha256", source),
+    ]
+    (f,) = checks_to_findings("app017", checks)
+    assert (f.type, f.severity, f.doc_ids) == (
+        FindingType.DUPLICATE,
+        Severity.HIGH,
+        ["app017_lab_photo_1"],
+    )
+    assert f.evidence["methods"] == ["sha256", "phash"]  # strongest first
+    assert f.evidence["hash_type"] == "sha256" and f.evidence["hash_value"] == "sha256-value"
+    assert f.evidence["duplicate_of"] == {"app_id": "app014", "doc_id": "app014_lab_photo_2"}
+    assert f.evidence["duplicates"] == [["app014", "app014_lab_photo_2"]]
+    assert (
+        f.message
+        == "Duplicate of app014_lab_photo_2 in application app014 (sha256 and phash match)"
+    )
+
+
+def test_perceptual_only_match_keeps_phash_evidence():
+    (f,) = checks_to_findings("app2", [dup_check("app2_noc", "phash", [("app1", "app1_noc")])])
+    assert f.evidence["methods"] == ["phash"] and f.evidence["hash_type"] == "phash"
+
+
+def test_different_sources_or_documents_stay_separate_findings():
+    checks = [
+        dup_check("app3_noc", "sha256", [("app1", "app1_noc"), ("app2", "app2_noc")]),
+        dup_check("app3_noc", "phash", [("app1", "app1_noc")]),
+        dup_check("app3_land_deed", "sha256", [("app1", "app1_land_deed")]),
+    ]
+    found = {
+        (f.doc_ids[0], f.evidence["duplicate_of"]["doc_id"]): f
+        for f in checks_to_findings("app3", checks)
+    }
+    assert set(found) == {
+        ("app3_noc", "app1_noc"),
+        ("app3_noc", "app2_noc"),
+        ("app3_land_deed", "app1_land_deed"),
+    }
+    assert found[("app3_noc", "app1_noc")].evidence["methods"] == ["sha256", "phash"]
+    assert found[("app3_noc", "app2_noc")].evidence["methods"] == ["sha256"]
+
+
+def test_json_round_tripped_sources_collapse_too():
+    """Checks read back from pipeline JSON carry lists, not tuples."""
+    checks = [
+        dup_check("a2_noc", "sha256", [["a1", "a1_noc"]]),
+        dup_check("a2_noc", "phash", [("a1", "a1_noc")]),
+    ]
+    assert len(checks_to_findings("a2", checks)) == 1
+
+
+def test_clean_duplicate_check_gives_no_finding():
+    assert (
+        checks_to_findings("a", [dup_check("a_noc", "sha256", [], status=CheckStatus.CLEAN)]) == []
+    )
