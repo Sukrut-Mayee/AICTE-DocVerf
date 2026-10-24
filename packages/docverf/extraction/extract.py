@@ -19,7 +19,15 @@ from docverf.extraction.vlm import vlm_extract
 from docverf.schemas import DocType, ExtractionResult, FieldValue, Region
 
 # Doc types supported by both extractors (rules + VLM), per TRD §6.
-_EXTRACTION_SUPPORTED = {DocType.LAND_DEED, DocType.NOC, DocType.AFFIDAVIT}
+_EXTRACTION_SUPPORTED = {
+    DocType.LAND_DEED,
+    DocType.NOC,
+    DocType.AFFIDAVIT,
+    DocType.ACCREDITATION_CERT,
+}
+# Photos have no text to read: VLM only (no OCR, no rules).
+_VLM_ONLY = {DocType.LAB_PHOTO}
+_USES_VLM = _EXTRACTION_SUPPORTED | _VLM_ONLY
 
 # Minimum shorter side in pixels for quality gate (TRD §10).
 _MIN_SHORTER_SIDE = 800
@@ -245,29 +253,31 @@ def extract(
     # --- OCR ---
     all_ocr_words: list[dict[str, Any]] = []
     ocr_engine = settings.OCR_ENGINE
-    try:
-        for page_num, img_path in passing_pages:
-            words = run_ocr(img_path)
-            for w in words:
-                w["page"] = page_num
-                all_ocr_words.append(w)
-        engines["ocr"] = ocr_engine
-    except ImportError as exc:
-        warnings.append(f"OCR engine '{ocr_engine}' not installed: {exc}")
-    except Exception as exc:
-        warnings.append(f"OCR failed: {exc}")
+    if resolved_type not in _VLM_ONLY:
+        try:
+            for page_num, img_path in passing_pages:
+                words = run_ocr(img_path)
+                for w in words:
+                    w["page"] = page_num
+                    all_ocr_words.append(w)
+            engines["ocr"] = ocr_engine
+        except ImportError as exc:
+            warnings.append(f"OCR engine '{ocr_engine}' not installed: {exc}")
+        except Exception as exc:
+            warnings.append(f"OCR failed: {exc}")
 
     # --- Extractors ---
     rules_result: dict[str, FieldValue] = {}
     vlm_result: dict[str, FieldValue] = {}
     vlm_model = ""
 
-    if resolved_type in _EXTRACTION_SUPPORTED:
-        # Rules extractor (extractor 1).
-        try:
-            rules_result = rules_extract(all_ocr_words, resolved_type)
-        except Exception as exc:
-            warnings.append(f"rules extraction failed: {exc}")
+    if resolved_type in _USES_VLM:
+        # Rules extractor (extractor 1); a photo has no OCR text.
+        if resolved_type not in _VLM_ONLY:
+            try:
+                rules_result = rules_extract(all_ocr_words, resolved_type)
+            except Exception as exc:
+                warnings.append(f"rules extraction failed: {exc}")
 
         # VLM extractor (extractor 2).
         try:
@@ -291,7 +301,7 @@ def extract(
         engines["ocr"] = ocr_engine
 
     # --- Merge fields per TRD §10 ---
-    if resolved_type in _EXTRACTION_SUPPORTED:
+    if resolved_type in _USES_VLM:
         fields = _merge_fields(rules_result, vlm_result)
     else:
         fields = rules_result

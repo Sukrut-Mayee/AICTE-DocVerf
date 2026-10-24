@@ -566,7 +566,7 @@ def test_vlm_extract_unsupported_doc_type(tmp_path, monkeypatch):
     monkeypatch.setattr(vlm_module, "_ollama_generate", fake_generate)
 
     try:
-        vlm_extract(path, DocType.LAB_PHOTO)
+        vlm_extract(path, DocType.APPLICATION_FORM)  # JSON form: no VLM extraction
     except ValueError as exc:
         assert "Unsupported doc_type" in str(exc)
     else:

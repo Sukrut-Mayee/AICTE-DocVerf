@@ -53,6 +53,16 @@ _FIELD_NAMES: dict[DocType, list[str]] = {
         "land_area_declared",
         "notary_reg_no",
     ],
+    DocType.ACCREDITATION_CERT: [
+        "body",
+        "cert_no",
+        "institute_name",
+        "programs",
+        "valid_from",
+        "valid_to",
+    ],
+    # capture_date comes from EXIF, not from the VLM.
+    DocType.LAB_PHOTO: ["room_label", "equipment_count"],
 }
 
 # Short type hints included in the prompt so the model emits sensible values.
@@ -83,6 +93,20 @@ _FIELD_HINTS: dict[DocType, dict[str, str]] = {
         "date": "ISO date YYYY-MM-DD",
         "land_area_declared": "number with unit (e.g. 2.5 acre)",
         "notary_reg_no": "string",
+    },
+    DocType.ACCREDITATION_CERT: {
+        "body": "string (accrediting body, e.g. NBA)",
+        "cert_no": "string (certificate number)",
+        "institute_name": "string",
+        "programs": "JSON array of strings (programme names)",
+        "valid_from": "ISO date YYYY-MM-DD",
+        "valid_to": "ISO date YYYY-MM-DD",
+    },
+    DocType.LAB_PHOTO: {
+        "room_label": "string (text visible in the photo, e.g. a sign) or null",
+        "equipment_count": (
+            "integer (count of computers/workstations clearly visible), null if none"
+        ),
     },
 }
 
@@ -117,6 +141,14 @@ def _build_prompt(doc_type: DocType) -> str:
         "  - Use null for missing values.",
         "  - Dates must be ISO YYYY-MM-DD strings.",
         "  - Numbers should be numeric, not strings.",
+        "  - Copy values exactly as printed. Never guess or infer; if a value is unclear or",
+        "    absent, use null.",
+        "  - Names of people/organisations: return them in Latin script. If the document prints",
+        "    the name in both English and Devanagari, use the English one. If only Devanagari,",
+        "    transliterate it the way it would be written in English",
+        "    (e.g. श्री विद्या एज्युकेशन ट्रस्ट → Shree Vidya Education Trust).",
+        "  - Do not translate or rewrite numbers, IDs, reference numbers or dates —",
+        "    only reformat dates to ISO.",
         "",
         "JSON object:",
     ]
@@ -167,6 +199,28 @@ def _validate_field_value(raw_value: Any) -> FieldValue | None:
         return None
 
 
+def _clean_value(name: str, value: Any) -> Any:
+    """The value to keep for a field, or None when the field must be treated as absent.
+
+    A null, a blank string or an empty list never becomes a value. equipment_count must be an
+    integer and programs a list of strings; anything else is dropped rather than guessed."""
+    if value is None or (isinstance(value, str) and not value.strip()) or value == []:
+        return None
+    if name == "equipment_count":
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        if isinstance(value, str) and value.strip().isdigit():
+            return int(value.strip())
+        return value if isinstance(value, int) else None
+    if name == "programs":
+        if not isinstance(value, list):
+            return None
+        return [p for p in value if isinstance(p, str) and p.strip()] or None
+    return value
+
+
 def _parse_response(response_text: str, doc_type: DocType) -> dict[str, FieldValue]:
     """Parse the VLM JSON response and validate each field against the schema."""
     text = _strip_code_fences(response_text)
@@ -183,7 +237,10 @@ def _parse_response(response_text: str, doc_type: DocType) -> dict[str, FieldVal
     for name, raw_value in data.items():
         if name not in allowed:
             continue
-        fv = _validate_field_value(raw_value)
+        value = _clean_value(name, raw_value)
+        if value is None:
+            continue
+        fv = _validate_field_value(value)
         if fv is not None:
             result[name] = fv
     return result
