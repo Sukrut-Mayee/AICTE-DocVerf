@@ -5,13 +5,23 @@ from docverf.reasoning.entity_resolution import names_match, normalize_id, norma
 
 
 def test_normalize_expands_abbreviations_and_strips_punctuation():
-    assert normalize_name("Shree Vidya Inst. of Tech.") == "shree vidya institute of technology"
+    assert normalize_name("Shree Vidya Inst. of Tech.") == "shri vidya institute of technology"
     assert normalize_name("  ABC  Engg.,College ") == "abc engineering college"
 
 
 def test_normalize_transliterates_devanagari():
     out = normalize_name("श्री विद्या")
     assert out.isascii() and "vidyA".lower() in out
+
+
+def test_spelling_variants_are_unified():
+    assert normalize_name("Shree Vidya Mahavidyalaya") == "shri vidya college"
+    assert normalize_name("Sri Vidyalay") == normalize_name("Shri Vidyalaya")
+
+
+def test_devanagari_shri_vidya_equals_latin_shree_vidya():
+    """Sanskrit-origin words match across scripts; English loanwords (एज्युकेशन) do not."""
+    assert normalize_name("श्री विद्या") == normalize_name("Shree Vidya") == "shri vidya"
 
 
 def test_normalize_id_ignores_case_and_spaces_but_keeps_slash():
@@ -23,6 +33,11 @@ def test_names_match_uses_threshold():
     assert names_match("Shree Vidya Institute of Technology", "Shree Vidya Inst. of Tech.")
     assert names_match("Vidya Shree Institute", "Shree Vidya Institute")  # token order ignored
     assert not names_match("Shree Vidya Charitable Society", "Shree Vidya Education Trust")
+
+
+def test_spelling_variant_names_match_but_different_bodies_do_not():
+    assert names_match("Shree Vidya Education Trust", "Sri Vidya Education Trust")
+    assert not names_match("Sri Vidya Charitable Society", "Shree Vidya Education Trust")
 
 
 @pytest.mark.parametrize(

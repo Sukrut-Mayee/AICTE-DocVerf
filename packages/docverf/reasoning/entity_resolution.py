@@ -8,18 +8,26 @@ from rapidfuzz import fuzz
 from docverf.config import get_settings
 
 ABBREVIATIONS = {"inst": "institute", "tech": "technology", "engg": "engineering"}
+# Common spelling variants of the same word, applied to each word of the lowercased name.
+SPELLING_VARIANTS = {
+    "shree": "shri",
+    "sri": "shri",
+    "mahavidyalaya": "college",
+    "vidyalay": "vidyalaya",
+}
+WORD_MAP = {**ABBREVIATIONS, **SPELLING_VARIANTS}
 # 1 unit -> acres. Only the units TRD §6 says deeds and forms use (Marathi/Hindi documents).
 ACRES_PER_UNIT = {"acre": 1.0, "hectare": 2.47105, "sqm": 0.000247105, "guntha": 0.025}
 
 
 def normalize_name(name: str) -> str:
     """Lowercase, strip punctuation, expand abbreviations (inst->institute, tech->technology,
-    engg->engineering), transliterate Devanagari to Latin."""
+    engg->engineering), unify spelling variants (shree/sri->shri), transliterate Devanagari."""
     latin = sanscript.transliterate(
         name, sanscript.DEVANAGARI, sanscript.ITRANS
     )  # Latin passes through
     words = re.sub(r"[^\w\s]", " ", latin.lower()).split()
-    return " ".join(ABBREVIATIONS.get(w, w) for w in words)
+    return " ".join(WORD_MAP.get(w, w) for w in words)
 
 
 def normalize_id(value: str) -> str:

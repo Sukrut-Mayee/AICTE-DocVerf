@@ -29,8 +29,9 @@ FIELD_MAP = {
     (DocType.LAND_DEED, "owner_name"): ("land_parcel", "owner"),
     (DocType.LAND_DEED, "mortgage_status"): ("land_parcel", "mortgage_status"),
 }
-# TODO(question): TRD §8.1 maps no entity for the other timeline events (§8.5). They become
-# claims on a per-document entity "doc:{doc_id}" so timeline_checks can find them.
+# A document is its own entity for its own dates: these become claims on "doc:{doc_id}" with the
+# field name as the attribute. The one exception is the trust registration date, which belongs to
+# the trust (trust:{trust_reg_no}.reg_date, in FIELD_MAP above).
 TIMELINE_FIELDS = {
     (DocType.APPLICATION_FORM, "application_date"),
     (DocType.LAND_DEED, "registration_date"),
@@ -54,9 +55,8 @@ UPGRADING_CHECKS = {"pdf_signature", "qr", "issuer_lookup"}
 
 def _entity_ids(extractions: list[ExtractionResult]) -> dict[str, str]:
     """Prototype simplification: one entity per type per application (institute, trust,
-    land_parcel), identified by the application_form's strong IDs. Without that form or ID
-    we fall back to the app_id so claims still group together.
-    TODO(question): TRD §8.1 does not say what the ID is when the form lacks a strong ID."""
+    land_parcel), identified by the application_form's strong IDs. If the form or an ID is
+    missing, the app_id stands in so that claims of one application still group together."""
     form = next((e for e in extractions if e.doc_type is DocType.APPLICATION_FORM), None)
 
     def strong(field: str, norm: bool = False) -> str:
