@@ -42,6 +42,10 @@ def load_checklist(name: str = "eoa") -> dict[str, Any]:
     return yaml.safe_load((RULES_DIR / "checklists" / f"{name}.yaml").read_text(encoding="utf-8"))
 
 
+def new_finding_id() -> str:
+    return f"f_{uuid.uuid4().hex[:8]}"  # TRD §5.3
+
+
 def new_finding(
     app_id: str,
     rule: dict[str, Any],
@@ -52,7 +56,7 @@ def new_finding(
 ) -> Finding:
     """Build a Finding from a rule's YAML header; ftype/severity override it (undetermined)."""
     return Finding(
-        finding_id=f"f_{uuid.uuid4().hex[:8]}",
+        finding_id=new_finding_id(),
         app_id=app_id,
         type=ftype or FindingType(rule["finding_type"]),
         severity=severity or Severity(rule["severity"]),

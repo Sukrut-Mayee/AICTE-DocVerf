@@ -49,11 +49,7 @@ def test_forensics(tmp_path):
 
 
 def test_reasoning():
-    from docverf.reasoning.run import run_reasoning
-
-    with pytest.raises(NotImplementedError):
-        run_reasoning("appx", [], [])
-
+    # run_reasoning / aggregate are implemented and tested in tests/test_reasoning_run.py.
     from docverf.reasoning.cross_institution import check_cross_institution
 
     with pytest.raises(NotImplementedError):
@@ -190,7 +186,7 @@ def test_eval():
 
 @pytest.mark.parametrize(
     "module",
-    ["provenance", "forensics", "reasoning", "verification", "ledger", "synthetic"],
+    ["provenance", "forensics", "verification", "ledger", "synthetic"],
 )
 def test_cli_stub_parses_args(module):
     """TRD §1 rule 7: `python -m docverf.<module> <path>` exists (fails until implemented)."""
