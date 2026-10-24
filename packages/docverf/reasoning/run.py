@@ -1,6 +1,12 @@
 """Reasoning entry points (TRD §8.7)."""
 
-from docverf.reasoning.entity_graph import FIELD_MAP, SEVERITY_RANK, build_claims, graph_checks
+from docverf.reasoning.entity_graph import (
+    FIELD_MAP,
+    SEVERITY_RANK,
+    build_claims,
+    graph_checks,
+    unit_findings,
+)
 from docverf.reasoning.rule_engine import load_checklist, new_finding_id, run_rules
 from docverf.reasoning.timeline import timeline_checks
 from docverf.schemas import (
@@ -120,6 +126,7 @@ def run_reasoning(
     claims = build_claims(extractions, checks)
     findings = [
         *run_rules(app_id, extractions, load_checklist("eoa"), {}),  # {}: no AICTE records yet (P1)
+        *unit_findings(app_id, extractions),
         *graph_checks(app_id, claims),
         *timeline_checks(app_id, claims),
         *checks_to_findings(app_id, checks),

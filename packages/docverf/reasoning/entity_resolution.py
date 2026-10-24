@@ -1,6 +1,7 @@
 """Entity resolution (TRD §8.1)."""
 
 import re
+import unicodedata
 
 from indic_transliteration import sanscript
 from rapidfuzz import fuzz
@@ -18,6 +19,15 @@ SPELLING_VARIANTS = {
 WORD_MAP = {**ABBREVIATIONS, **SPELLING_VARIANTS}
 # 1 unit -> acres. Only the units TRD §6 says deeds and forms use (Marathi/Hindi documents).
 ACRES_PER_UNIT = {"acre": 1.0, "hectare": 2.47105, "sqm": 0.000247105, "guntha": 0.025}
+# Spellings seen in documents -> the unit above. Keys are in `_unit_key` form (lowercase, no dots).
+UNIT_ALIASES = {
+    **dict.fromkeys(["acres", "ac", "एकर"], "acre"),
+    **dict.fromkeys(["hectares", "ha", "हेक्टर"], "hectare"),
+    **dict.fromkeys(
+        ["sq m", "square metre", "square metres", "square meter", "square meters"], "sqm"
+    ),
+    **dict.fromkeys(["gunthas", "गुंठा"], "guntha"),
+}
 
 
 def normalize_name(name: str) -> str:
@@ -43,9 +53,20 @@ def names_match(a: str, b: str, threshold: float | None = None) -> bool:
     return fuzz.token_sort_ratio(normalize_name(a), normalize_name(b)) >= threshold
 
 
+def _unit_key(unit: str) -> str:
+    """'Sq. M.' -> 'sq m': NFC, lowercase, dots dropped, whitespace collapsed."""
+    return " ".join(unicodedata.normalize("NFC", unit).lower().replace(".", "").split())
+
+
+def acres_per_unit(unit: str | None) -> float | None:
+    """Acres in one `unit` (plurals, abbreviations and Marathi/Hindi names accepted), or None."""
+    key = _unit_key(unit or "")
+    return ACRES_PER_UNIT.get(UNIT_ALIASES.get(key, key))
+
+
 def to_acres(value: float, unit: str | None) -> float:
     """Convert an area to acres. An unknown unit raises: guessing a factor would hide a conflict."""
-    factor = ACRES_PER_UNIT.get((unit or "").strip().lower())
+    factor = acres_per_unit(unit)
     if factor is None:
         raise ValueError(f"unknown area unit {unit!r}; known: {sorted(ACRES_PER_UNIT)}")
     return value * factor

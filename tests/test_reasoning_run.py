@@ -7,6 +7,7 @@ from datetime import datetime
 
 import pytest
 from docverf.reasoning.__main__ import main
+from docverf.reasoning.entity_graph import build_claims
 from docverf.reasoning.rule_engine import new_finding
 from docverf.reasoning.run import (
     _field_key,
@@ -337,3 +338,55 @@ def test_cli_runs_as_module(tmp_path):
     )
     assert run.returncode == 0, run.stderr
     assert "0 finding(s), priority 0" in run.stdout
+
+
+# ---- area units that cannot be converted must never crash the pipeline ----
+
+
+def set_deed_unit(docs, unit):
+    next(d for d in docs if d.doc_type.value == "land_deed").fields["area"].unit = unit
+
+
+@pytest.mark.parametrize("unit", ["bigha", "", None])
+def test_unknown_area_unit_gives_one_undetermined_finding_not_an_error(unit):
+    docs = load_app("app_clean")
+    set_deed_unit(docs, unit)
+    findings = run_reasoning("appx", docs, [])  # must not raise
+    (f,) = findings  # form and affidavit still agree at 2.5 acres, so no conflict
+    assert (f.type, f.severity, f.doc_ids, f.attribute) == (
+        FindingType.UNDETERMINED,
+        Severity.INFO,
+        ["appx_land_deed"],
+        "area",
+    )
+    assert f.layer is Layer.B and f.evidence["unit"] == unit and f.evidence["value"] == 2.5
+    assert (f"'{unit}'" in f.message) if unit else ("no unit" in f.message)
+    assert "area" not in {c.attribute for c in build_claims(docs, []) if c.doc_id.endswith("deed")}
+
+
+def test_unknown_unit_does_not_hide_or_invent_a_conflict():
+    docs = load_app("app_clean")
+    set_deed_unit(docs, "bigha")
+    next(d for d in docs if d.doc_type.value == "application_form").fields["land_area"].value = 4.0
+    kinds = sorted(f.type.value for f in run_reasoning("appx", docs, []))
+    # form 4.0 vs affidavit 2.5 still conflict (self vs self); the deed is simply left out
+    assert kinds == ["attribute_conflict", "undetermined"]
+
+
+def test_other_unit_spellings_are_accepted_by_the_pipeline():
+    docs = load_app("app_clean")
+    set_deed_unit(docs, "ACRES")
+    assert run_reasoning("appx", docs, []) == []
+    next(d for d in docs if d.doc_type.value == "land_deed").fields["area"].unit = "हेक्टर"
+    kinds = [f.type.value for f in run_reasoning("appx", docs, [])]
+    assert kinds == ["attribute_conflict"]  # 2.5 hectare is 6.18 acres: a real conflict
+
+
+def test_unknown_unit_finding_reaches_the_document_status():
+    docs = load_app("app_clean")
+    set_deed_unit(docs, "bigha")
+    findings = run_reasoning("appx", docs, [])
+    statuses, priority = aggregate("appx", findings, [], [d.doc_id for d in docs])
+    deed = next(s for s in statuses if s.doc_id == "appx_land_deed")
+    assert deed.overall is DocOverallStatus.NO_ISSUES and priority == 0  # info only
+    assert "unknown area unit 'bigha'" in deed.note

@@ -4,16 +4,23 @@ from collections.abc import Callable
 from typing import Any
 
 from docverf.config import get_settings
-from docverf.reasoning.entity_resolution import names_match, normalize_id, to_acres
-from docverf.reasoning.rule_engine import load_rules, new_finding
+from docverf.reasoning.entity_resolution import (
+    acres_per_unit,
+    names_match,
+    normalize_id,
+    to_acres,
+)
+from docverf.reasoning.rule_engine import load_rules, new_finding, new_finding_id
 from docverf.schemas import (
     AuthorityTier,
     CheckResult,
     Claim,
     DocType,
     ExtractionResult,
+    FieldValue,
     Finding,
     FindingType,
+    Layer,
     Severity,
     VerificationStatus,
 )
@@ -79,6 +86,44 @@ def _entity_ids(extractions: list[ExtractionResult]) -> dict[str, str]:
     }
 
 
+def _unknown_unit(doc_type: DocType, name: str, fv: FieldValue) -> bool:
+    """An area field whose unit we cannot convert to acres."""
+    return (
+        FIELD_MAP.get((doc_type, name), ("", ""))[1] == "area" and acres_per_unit(fv.unit) is None
+    )
+
+
+def unit_findings(app_id: str, extractions: list[ExtractionResult]) -> list[Finding]:
+    """One undetermined (info) finding per area whose unit is unknown; build_claims leaves those
+    areas out, so they never cause or hide a conflict."""
+    return [
+        Finding(
+            finding_id=new_finding_id(),
+            app_id=app_id,
+            type=FindingType.UNDETERMINED,
+            severity=Severity.INFO,
+            layer=Layer.B,
+            doc_ids=[doc.doc_id],
+            attribute=name,
+            message=(
+                f"Cannot compare {name} in {doc.doc_id.removeprefix(f'{app_id}_')}: "
+                + (f"unknown area unit {fv.unit!r}" if fv.unit else "the area has no unit")
+            ),
+            evidence={
+                "field": name,
+                "value": fv.value,
+                "unit": fv.unit,
+                "confidence": fv.confidence,
+                "page": fv.page,
+                "bbox": fv.bbox,
+            },
+        )
+        for doc in extractions
+        for name, fv in doc.fields.items()
+        if _unknown_unit(doc.doc_type, name, fv)
+    ]
+
+
 def build_claims(extractions: list[ExtractionResult], checks: list[CheckResult]) -> list[Claim]:
     """Map fields to entity.attribute (§8.1); authority tier from §6, upgraded to issuer_verified
     by a verified pdf_signature / qr / issuer_lookup check."""
@@ -102,6 +147,8 @@ def build_claims(extractions: list[ExtractionResult], checks: list[CheckResult])
             elif (doc.doc_type, name) in TIMELINE_FIELDS:
                 entity, attribute = f"doc:{doc.doc_id}", name
             else:
+                continue
+            if _unknown_unit(doc.doc_type, name, fv):  # reported by unit_findings
                 continue
             value = to_acres(fv.value, fv.unit) if attribute == "area" else fv.value
             claims.append(

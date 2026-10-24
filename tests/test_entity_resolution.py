@@ -1,7 +1,14 @@
 """Checkpoint 2: name normalisation, fuzzy matching and area units (TRD §8.1, §8.2)."""
 
 import pytest
-from docverf.reasoning.entity_resolution import names_match, normalize_id, normalize_name, to_acres
+from docverf.reasoning.entity_resolution import (
+    ACRES_PER_UNIT,
+    acres_per_unit,
+    names_match,
+    normalize_id,
+    normalize_name,
+    to_acres,
+)
 
 
 def test_normalize_expands_abbreviations_and_strips_punctuation():
@@ -52,3 +59,34 @@ def test_to_acres(value, unit, acres):
 def test_to_acres_unknown_unit_raises(unit):
     with pytest.raises(ValueError, match="unknown area unit"):
         to_acres(1, unit)
+
+
+UNIT_SPELLINGS = {
+    "acre": ["acre", "acres", "ac", "Acres", " ACRE ", "एकर"],
+    "hectare": ["hectare", "hectares", "ha", "Hectares", "हेक्टर"],
+    "sqm": [
+        "sqm",
+        "sq m",
+        "sq.m",
+        "Sq. M.",
+        "square metre",
+        "Square Metres",
+        "square meter",
+        "square meters",
+    ],
+    "guntha": ["guntha", "gunthas", "Guntha", "गुंठा"],
+}
+
+
+@pytest.mark.parametrize(
+    "unit, canonical",
+    [(spelling, canon) for canon, spellings in UNIT_SPELLINGS.items() for spelling in spellings],
+)
+def test_unit_spellings_convert_like_the_canonical_unit(unit, canonical):
+    assert to_acres(3, unit) == to_acres(3, canonical)
+    assert acres_per_unit(unit) == ACRES_PER_UNIT[canonical]
+
+
+def test_acres_per_unit_is_none_for_unknown_units():
+    assert acres_per_unit("bigha") is None and acres_per_unit("") is None
+    assert acres_per_unit(None) is None
