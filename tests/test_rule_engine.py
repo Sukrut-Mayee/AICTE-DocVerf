@@ -54,6 +54,12 @@ def test_missing_doc_is_reported():
     ]
 
 
+def test_missing_doc_does_not_trigger_its_field_rules():
+    """LAND_NOT_MORTGAGED does not apply when the deed is absent: only REQUIRED_DOCS speaks."""
+    docs = [d for d in load_app("app_clean") if d.doc_type.value != "land_deed"]
+    assert outcomes(docs)["LAND_NOT_MORTGAGED"] == []
+
+
 def test_low_confidence_or_missing_field_is_undetermined_not_fail():
     docs = load_app("app_conflict")
     noc = next(d for d in docs if d.doc_type.value == "noc")
@@ -62,7 +68,34 @@ def test_low_confidence_or_missing_field_is_undetermined_not_fail():
     got = outcomes(docs)
     assert got["NOC_VALID_FOR_YEAR"] == [RuleOutcome.UNDETERMINED]
     assert got["NOC_REF_FORMAT"] == [RuleOutcome.UNDETERMINED]
-    assert run_rules("appx", docs, load_checklist("eoa"), {}) == []
+    findings = {f.rule_id: f for f in run_rules("appx", docs, load_checklist("eoa"), {})}
+    assert set(findings) == {"NOC_VALID_FOR_YEAR", "NOC_REF_FORMAT"}
+    for f in findings.values():
+        assert (f.type, f.severity, f.doc_ids) == (
+            FindingType.UNDETERMINED,
+            Severity.INFO,
+            ["appx_noc"],
+        )
+    low, missing = findings["NOC_VALID_FOR_YEAR"], findings["NOC_REF_FORMAT"]
+    assert low.attribute == "valid_until" and "confidence 0.50 is below" in low.message
+    assert missing.attribute == "ref_no" and "field is missing" in missing.message
+    assert missing.evidence["value"] is None
+
+
+def test_failure_evidence_lets_ui_highlight_the_box():
+    docs = load_app("app_conflict")
+    noc = next(d for d in docs if d.doc_type.value == "noc")
+    noc.fields["valid_until"].page, noc.fields["valid_until"].bbox = 1, [0.1, 0.2, 0.3, 0.4]
+    (f,) = run_rules("appx", docs, load_checklist("eoa"), {})
+    assert f.attribute == "valid_until" and f.claims == []
+    assert f.evidence == {
+        "field": "valid_until",
+        "value": "2027-12-31",
+        "confidence": 0.9,
+        "page": 1,
+        "bbox": [0.1, 0.2, 0.3, 0.4],
+        "compared_to": "2028-06-30",
+    }
 
 
 def test_regex_and_equals_failures():
