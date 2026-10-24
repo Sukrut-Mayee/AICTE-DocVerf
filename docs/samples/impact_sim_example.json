@@ -1,0 +1,92 @@
+{
+  "excluded": [
+    "appx_application_form",
+    "appx_affidavit"
+  ],
+  "conclusions": [
+    {
+      "rule_id": "NOC_VALID_FOR_YEAR",
+      "before": "fail",
+      "after": "fail",
+      "status": "still_failing",
+      "message": "Still fails: NOC expires on 2027-12-31 before the academic year ends (2028-06-30)."
+    },
+    {
+      "rule_id": "NOC_REF_FORMAT",
+      "before": "pass",
+      "after": "pass",
+      "status": "still_supported",
+      "message": "Rule NOC_REF_FORMAT is still supported by the remaining documents."
+    },
+    {
+      "rule_id": "LAND_NOT_MORTGAGED",
+      "before": "pass",
+      "after": "pass",
+      "status": "still_supported",
+      "message": "Rule LAND_NOT_MORTGAGED is still supported by the remaining documents."
+    },
+    {
+      "rule_id": "REQUIRED_DOCS",
+      "before": "pass",
+      "after": "fail",
+      "status": "now_failing",
+      "message": "Now fails: Required document 'application_form' is missing; Required document 'affidavit' is missing."
+    },
+    {
+      "rule_id": "LAND_AREA_AGREE",
+      "before": "fail",
+      "after": "undetermined",
+      "status": "now_uncertain",
+      "message": "Land parcel area can no longer be cross-checked: only the land deed remains."
+    },
+    {
+      "rule_id": "INSTITUTE_NAME_AGREE",
+      "before": "pass",
+      "after": "undetermined",
+      "status": "now_uncertain",
+      "message": "Institute name can no longer be cross-checked: only the noc remains."
+    },
+    {
+      "rule_id": "SURVEY_NO_AGREE",
+      "before": "pass",
+      "after": "undetermined",
+      "status": "now_uncertain",
+      "message": "Land parcel survey no can no longer be cross-checked: only the land deed remains."
+    },
+    {
+      "rule_id": "OWNER_IS_TRUST",
+      "before": "fail",
+      "after": "undetermined",
+      "status": "now_uncertain",
+      "message": "Land parcel owner vs trust name can no longer be cross-checked: only the land deed remains."
+    },
+    {
+      "rule_id": "TL_NOC_AFTER_TRUST",
+      "before": "fail",
+      "after": "undetermined",
+      "status": "now_uncertain",
+      "message": "Rule TL_NOC_AFTER_TRUST can no longer be checked: the application form was removed."
+    },
+    {
+      "rule_id": "TL_NOC_ISSUE_BEFORE_EXPIRY",
+      "before": "pass",
+      "after": "pass",
+      "status": "still_supported",
+      "message": "Rule TL_NOC_ISSUE_BEFORE_EXPIRY is still supported by the remaining documents."
+    },
+    {
+      "rule_id": "TL_DEED_BEFORE_APPLICATION",
+      "before": "pass",
+      "after": "undetermined",
+      "status": "now_uncertain",
+      "message": "Rule TL_DEED_BEFORE_APPLICATION can no longer be checked: the application form was removed."
+    },
+    {
+      "rule_id": "TL_AFFIDAVIT_IN_WINDOW",
+      "before": "pass",
+      "after": "undetermined",
+      "status": "now_uncertain",
+      "message": "Rule TL_AFFIDAVIT_IN_WINDOW can no longer be checked: the affidavit was removed."
+    }
+  ]
+}

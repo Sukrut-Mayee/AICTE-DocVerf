@@ -11,6 +11,23 @@ from docverf.schemas import Claim, Finding, FindingType, Severity
 DOC_TYPE_ALIASES = {"form": "application_form", "accreditation": "accreditation_cert"}
 
 
+def event_doc_id(app_id: str, event: str) -> str:
+    """The document an event name such as 'noc.issue_date' is read from. The trust registration
+    date is taken from the application form; 'config.X' needs no document ('')."""
+    prefix = event.split(".", 1)[0]
+    if prefix == "config":
+        return ""
+    prefix = "form" if prefix == "trust" else prefix
+    return f"{app_id}_{DOC_TYPE_ALIASES.get(prefix, prefix)}"
+
+
+def rule_events(rule: dict[str, Any]) -> list[str]:
+    """The event names a timeline rule compares (before/after, or within/start/end)."""
+    if "before" in rule:
+        return [rule["before"], rule["after"]]
+    return [rule["within"], rule["start"], rule["end"]]
+
+
 def timeline_checks(app_id: str, claims: list[Claim]) -> list[Finding]:
     """Evaluate rules/timeline/*.yaml. A missing or low-confidence date is `undetermined`
     (severity info), never a violation. A rule whose document is absent does not apply
@@ -22,9 +39,7 @@ def timeline_checks(app_id: str, claims: list[Claim]) -> list[Finding]:
         """'noc.issue_date' -> (that document's id, its claim). The trust registration date is
         the trust's claim, taken from the application form. 'config.X' needs no document."""
         prefix, attribute = event.split(".", 1)
-        doc_id = f"{app_id}_{DOC_TYPE_ALIASES.get(prefix, prefix)}"
-        if prefix == "trust":
-            doc_id = f"{app_id}_application_form"
+        doc_id = event_doc_id(app_id, event)
         claim = next(
             (
                 c
@@ -65,12 +80,7 @@ def timeline_checks(app_id: str, claims: list[Claim]) -> list[Finding]:
 
     for rule in load_rules("timeline"):
         rule = {"layer": "B", **rule}  # timeline checks are Layer B (consistency)
-        events = (
-            [rule["before"], rule["after"]]
-            if "before" in rule
-            else [rule["within"], rule["start"], rule["end"]]
-        )
-        read_events = {e: read(e) for e in events}
+        read_events = {e: read(e) for e in rule_events(rule)}
         # A rule does not apply when one of its documents is absent altogether.
         if any(
             doc_id and not any(c.doc_id == doc_id for c in claims)

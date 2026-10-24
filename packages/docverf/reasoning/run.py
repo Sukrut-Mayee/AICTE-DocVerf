@@ -119,16 +119,25 @@ def dedupe(app_id: str, findings: list[Finding]) -> list[Finding]:
     return [f for f in findings if (k := _field_key(app_id, f)) is None or best[k] is f]
 
 
+def evaluate_rules(
+    app_id: str, extractions: list[ExtractionResult], checks: list[CheckResult]
+) -> list[Finding]:
+    """Findings of every YAML rule: rules, graph checks and timeline, before de-duplication."""
+    claims = build_claims(extractions, checks)
+    return [
+        *run_rules(app_id, extractions, load_checklist("eoa"), {}),  # {}: no AICTE records yet (P1)
+        *graph_checks(app_id, claims),
+        *timeline_checks(app_id, claims),
+    ]
+
+
 def run_reasoning(
     app_id: str, extractions: list[ExtractionResult], checks: list[CheckResult]
 ) -> list[Finding]:
     """Run rules, graph checks and timeline, add findings from the checks, drop duplicates."""
-    claims = build_claims(extractions, checks)
     findings = [
-        *run_rules(app_id, extractions, load_checklist("eoa"), {}),  # {}: no AICTE records yet (P1)
+        *evaluate_rules(app_id, extractions, checks),
         *unit_findings(app_id, extractions),
-        *graph_checks(app_id, claims),
-        *timeline_checks(app_id, claims),
         *checks_to_findings(app_id, checks),
     ]
     return dedupe(app_id, findings)
