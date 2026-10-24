@@ -52,3 +52,4 @@ blockchain/typechain-types/
 Thumbs.db
 .idea/
 .vscode/
+.venv-wsl/
