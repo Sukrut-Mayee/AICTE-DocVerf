@@ -3,7 +3,7 @@
 from typing import Any
 
 from docverf.reasoning.entity_graph import build_claims
-from docverf.reasoning.rule_engine import load_rules
+from docverf.reasoning.rule_engine import load_rules, rule_title
 from docverf.reasoning.run import evaluate_rules
 from docverf.reasoning.timeline import event_doc_id, rule_events
 from docverf.schemas import CheckResult, Claim, ExtractionResult, Finding, FindingType, RuleOutcome
@@ -54,11 +54,12 @@ def _outcomes(
     extractions: list[ExtractionResult],
     checks: list[CheckResult],
     catalogue: Catalogue,
+    aicte_records: dict[str, Any] | None,
 ) -> dict[str, tuple[RuleOutcome, list[Finding]]]:
     """Per rule_id: fail if it produced a finding that is not just uncertainty (with those
     findings), undetermined if it produced only uncertainty or could not run, else pass."""
     present = {e.doc_id for e in extractions}
-    findings = evaluate_rules(app_id, extractions, checks)
+    findings = evaluate_rules(app_id, extractions, checks, aicte_records)
     outcomes: dict[str, tuple[RuleOutcome, list[Finding]]] = {}
     for kind, rule, docs in catalogue:
         mine = [f for f in findings if f.rule_id == rule["id"]]
@@ -95,7 +96,7 @@ def _subject(kind: str, rule: dict[str, Any]) -> str:
         refs = [rule] if rule["type"] == "attribute_agree" else [rule["left"], rule["right"]]
         text = " vs ".join(f"{r['entity_type']} {r['attribute']}" for r in refs).replace("_", " ")
         return text.capitalize()
-    return f'Rule "{rule["description"]}"' if "description" in rule else f"Rule {rule['id']}"
+    return f'Rule "{rule_title(rule)}"'
 
 
 def _message(
@@ -141,6 +142,7 @@ def simulate_exclusion(
     extractions: list[ExtractionResult],
     checks: list[CheckResult],
     exclude_doc_ids: list[str],
+    aicte_records: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Re-evaluate every rule with `exclude_doc_ids` (and their checks) removed.
 
@@ -155,8 +157,8 @@ def simulate_exclusion(
     kept_checks = [c for c in checks if c.doc_id not in excluded]
 
     catalogue = _catalogue(app_id, extractions, build_claims(extractions, checks))
-    before = _outcomes(app_id, extractions, checks, catalogue)
-    after = _outcomes(app_id, kept, kept_checks, catalogue)
+    before = _outcomes(app_id, extractions, checks, catalogue, aicte_records)
+    after = _outcomes(app_id, kept, kept_checks, catalogue, aicte_records)
     present = {e.doc_id for e in kept}
     conclusions = []
     for kind, rule, docs in catalogue:

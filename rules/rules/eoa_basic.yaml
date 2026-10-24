@@ -10,6 +10,7 @@
   message: "NOC expires on {left} before the academic year ends ({right})"
 
 - id: NOC_REF_FORMAT
+  description: "NOC reference number must follow the issuer's format"
   type: field_regex
   field: {doc_type: noc, field: ref_no}
   pattern: '^FIRE/[A-Z]{2}/\d{4}/\d{6}$'
@@ -19,6 +20,7 @@
   message: "NOC reference number '{value}' does not match the expected format"
 
 - id: LAND_NOT_MORTGAGED
+  description: "Land must be free of any mortgage"
   type: field_equals
   field: {doc_type: land_deed, field: mortgage_status}
   value: none
@@ -27,8 +29,19 @@
   message: "Land deed shows mortgage status '{value}'"
 
 - id: REQUIRED_DOCS
+  description: "All documents required for an extension of approval must be submitted"
   type: required_docs
   checklist: eoa                     # reads rules/checklists/eoa.yaml
   severity: high
   finding_type: missing_doc
   message: "Required document '{doc_type}' is missing"
+
+- id: TER_PAID
+  description: "The technical evaluation fee (TER) must be paid"
+  type: field_present
+  field: {doc_type: application_form, field: ter_txn_id}
+  records: payments                  # key of aicte_records holding {txn_id: {paid, amount, date}}
+  severity: high
+  finding_type: rule_failed
+  message: "The application gives no TER payment reference"
+  unpaid_message: "TER payment reference '{value}' is not recorded as paid"

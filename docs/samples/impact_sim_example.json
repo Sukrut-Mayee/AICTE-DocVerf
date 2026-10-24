@@ -16,14 +16,14 @@
       "before": "pass",
       "after": "pass",
       "status": "still_supported",
-      "message": "Rule NOC_REF_FORMAT is still supported by the remaining documents."
+      "message": "Rule \"NOC reference number must follow the issuer's format\" is still supported by the remaining documents."
     },
     {
       "rule_id": "LAND_NOT_MORTGAGED",
       "before": "pass",
       "after": "pass",
       "status": "still_supported",
-      "message": "Rule LAND_NOT_MORTGAGED is still supported by the remaining documents."
+      "message": "Rule \"Land must be free of any mortgage\" is still supported by the remaining documents."
     },
     {
       "rule_id": "REQUIRED_DOCS",
@@ -31,6 +31,13 @@
       "after": "fail",
       "status": "now_failing",
       "message": "Now fails: Required document 'application_form' is missing; Required document 'affidavit' is missing."
+    },
+    {
+      "rule_id": "TER_PAID",
+      "before": "pass",
+      "after": "undetermined",
+      "status": "now_uncertain",
+      "message": "Rule \"The technical evaluation fee (TER) must be paid\" can no longer be checked: the application form was removed."
     },
     {
       "rule_id": "LAND_AREA_AGREE",
@@ -65,28 +72,28 @@
       "before": "fail",
       "after": "undetermined",
       "status": "now_uncertain",
-      "message": "Rule TL_NOC_AFTER_TRUST can no longer be checked: the application form was removed."
+      "message": "Rule \"NOC must be issued after the trust was registered\" can no longer be checked: the application form was removed."
     },
     {
       "rule_id": "TL_NOC_ISSUE_BEFORE_EXPIRY",
       "before": "pass",
       "after": "pass",
       "status": "still_supported",
-      "message": "Rule TL_NOC_ISSUE_BEFORE_EXPIRY is still supported by the remaining documents."
+      "message": "Rule \"NOC must be issued before it expires\" is still supported by the remaining documents."
     },
     {
       "rule_id": "TL_DEED_BEFORE_APPLICATION",
       "before": "pass",
       "after": "undetermined",
       "status": "now_uncertain",
-      "message": "Rule TL_DEED_BEFORE_APPLICATION can no longer be checked: the application form was removed."
+      "message": "Rule \"Land deed must be registered before the application is made\" can no longer be checked: the application form was removed."
     },
     {
       "rule_id": "TL_AFFIDAVIT_IN_WINDOW",
       "before": "pass",
       "after": "undetermined",
       "status": "now_uncertain",
-      "message": "Rule TL_AFFIDAVIT_IN_WINDOW can no longer be checked: the affidavit was removed."
+      "message": "Rule \"Affidavit must be dated within the application window\" can no longer be checked: the affidavit was removed."
     }
   ]
 }

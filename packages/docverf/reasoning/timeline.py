@@ -4,7 +4,7 @@ from datetime import date
 from typing import Any
 
 from docverf.config import get_settings
-from docverf.reasoning.rule_engine import load_rules, new_finding
+from docverf.reasoning.rule_engine import load_rules, new_finding, rule_title
 from docverf.schemas import Claim, Finding, FindingType, Severity
 
 # YAML event prefixes that are not the doc_type value itself.
@@ -94,7 +94,7 @@ def timeline_checks(app_id: str, claims: list[Claim]) -> list[Finding]:
                 new_finding(
                     app_id,
                     rule,
-                    f"Cannot check {rule['id']}: {why}",
+                    f'Cannot check "{rule_title(rule)}": {why}',
                     ftype=FindingType.UNDETERMINED,
                     severity=Severity.INFO,
                     doc_ids=[doc_id],

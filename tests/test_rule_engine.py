@@ -1,7 +1,13 @@
 """Checkpoint 1: YAML rule engine on the Appendix A fixtures (TRD §8.4, §17)."""
 
 import pytest
-from docverf.reasoning.rule_engine import _evaluate, load_checklist, load_rules, run_rules
+from docverf.reasoning.rule_engine import (
+    _evaluate,
+    load_checklist,
+    load_rules,
+    rule_title,
+    run_rules,
+)
 from docverf.schemas import FindingType, RuleOutcome, Severity
 
 from tests.apps import load_app
@@ -109,3 +115,118 @@ def test_unknown_rule_type_is_loud():
             load_app("app_clean"),
             {},
         )
+
+
+# ---- plain-English rule descriptions ----
+
+
+@pytest.mark.parametrize("subdir", ["rules", "graph", "timeline"])
+def test_every_rule_has_a_plain_english_description(subdir):
+    for rule in load_rules(subdir):
+        assert rule.get("description", "").strip(), rule["id"]
+        assert rule_title(rule) == rule["description"]
+
+
+def test_rule_title_falls_back_to_the_id():
+    assert rule_title({"id": "X_RULE"}) == "X_RULE"
+
+
+def test_undetermined_message_uses_the_description():
+    docs = load_app("app_conflict")
+    next(d for d in docs if d.doc_type.value == "noc").fields["valid_until"].confidence = 0.5
+    (f,) = run_rules("appx", docs, load_checklist("eoa"))
+    assert f.message == (
+        'Cannot evaluate "NOC must be valid until the end of the academic year" on appx_noc: '
+        "valid_until - confidence 0.50 is below the threshold 0.75"
+    )
+
+
+# ---- TER_PAID: field_present + payment records (TRD §8.4) ----
+
+TXN = "TER2027000123"  # the reference on both fixture application forms
+PAID = {"payments": {TXN: {"paid": True, "amount": 25000, "date": "2027-01-19"}}}
+
+
+def ter_findings(docs, records=None):
+    return [
+        f
+        for f in run_rules("appx", docs, load_checklist("eoa"), records)
+        if f.rule_id == "TER_PAID"
+    ]
+
+
+def clean_with(**field_changes):
+    docs = load_app("app_clean")
+    form = next(d for d in docs if d.doc_type.value == "application_form")
+    for attr, value in field_changes.items():
+        setattr(form.fields["ter_txn_id"], attr, value)
+    return docs, form
+
+
+def test_ter_paid_passes_when_the_reference_is_present_and_paid():
+    docs = load_app("app_clean")
+    assert run_rules("appx", docs, load_checklist("eoa"), PAID) == []  # whole app: zero findings
+    assert outcomes(docs)["TER_PAID"] == [RuleOutcome.PASS]  # no records: presence is enough
+
+
+def test_ter_reference_missing_fails_with_or_without_records():
+    docs, form = clean_with()
+    del form.fields["ter_txn_id"]
+    for records in (None, PAID):
+        (f,) = ter_findings(docs, records)
+        assert (f.type, f.severity, f.doc_ids, f.attribute) == (
+            FindingType.RULE_FAILED,
+            Severity.HIGH,
+            ["appx_application_form"],
+            "ter_txn_id",
+        )
+        assert f.message == "The application gives no TER payment reference"
+        assert f.evidence["value"] is None
+
+
+@pytest.mark.parametrize("blank", ["", "   ", None])
+def test_ter_blank_reference_counts_as_missing(blank):
+    docs, _ = clean_with(value=blank)
+    (f,) = ter_findings(docs)
+    assert f.message == "The application gives no TER payment reference"
+
+
+@pytest.mark.parametrize(
+    "records, compared_to",
+    [
+        (
+            {"payments": {TXN: {"paid": False, "amount": 25000}}},
+            {"found": True, "paid": False, "amount": 25000},
+        ),
+        ({"payments": {TXN: {"paid": "yes"}}}, {"found": True, "paid": "yes"}),  # only True counts
+        ({"payments": {TXN: {}}}, {"found": True}),
+        ({"payments": {"OTHER": {"paid": True}}}, {"found": False}),  # transaction not found
+        ({"payments": {}}, {"found": False}),  # records fetched, but empty
+    ],
+)
+def test_ter_unpaid_or_unknown_transaction_fails(records, compared_to):
+    (f,) = ter_findings(load_app("app_clean"), records)
+    assert (f.type, f.severity) == (FindingType.RULE_FAILED, Severity.HIGH)
+    assert f.message == f"TER payment reference '{TXN}' is not recorded as paid"
+    assert f.evidence["compared_to"] == compared_to
+    assert f.attribute == "ter_txn_id" and f.claims == []
+
+
+@pytest.mark.parametrize("records", [None, {}, {"approved_intake": {}}])
+def test_ter_without_payment_records_is_skipped_silently(records):
+    """Records that were not fetched are not evidence of non-payment."""
+    assert ter_findings(load_app("app_clean"), records) == []
+    assert run_rules("appx", load_app("app_clean"), load_checklist("eoa"), records) == []
+
+
+def test_ter_unreadable_reference_is_undetermined_not_unpaid():
+    docs, _ = clean_with(confidence=0.5)
+    unpaid = {"payments": {TXN: {"paid": False}}}
+    (f,) = ter_findings(docs, unpaid)
+    assert (f.type, f.severity) == (FindingType.UNDETERMINED, Severity.INFO)
+    assert "confidence 0.50" in f.message and "The technical evaluation fee" in f.message
+
+
+def test_ter_does_not_apply_when_the_form_is_absent():
+    docs = [d for d in load_app("app_clean") if d.doc_type.value != "application_form"]
+    assert ter_findings(docs, PAID) == []

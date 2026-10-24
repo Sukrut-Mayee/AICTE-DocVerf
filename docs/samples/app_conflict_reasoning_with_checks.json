@@ -3,7 +3,7 @@
   "priority": 411,
   "findings": [
     {
-      "finding_id": "f_616cc077",
+      "finding_id": "f_6b49dea6",
       "app_id": "appx",
       "type": "expired",
       "severity": "high",
@@ -26,7 +26,7 @@
       }
     },
     {
-      "finding_id": "f_0874514f",
+      "finding_id": "f_e35db98b",
       "app_id": "appx",
       "type": "attribute_conflict",
       "severity": "high",
@@ -84,7 +84,7 @@
       }
     },
     {
-      "finding_id": "f_625b906a",
+      "finding_id": "f_c436cec2",
       "app_id": "appx",
       "type": "relationship_violation",
       "severity": "high",
@@ -127,7 +127,7 @@
       "evidence": {}
     },
     {
-      "finding_id": "f_c0421c86",
+      "finding_id": "f_f76591c1",
       "app_id": "appx",
       "type": "timeline_violation",
       "severity": "high",
@@ -168,7 +168,7 @@
       }
     },
     {
-      "finding_id": "f_429fda23",
+      "finding_id": "f_5c2a8f31",
       "app_id": "appx",
       "type": "forensic_signal",
       "severity": "medium",
@@ -194,7 +194,7 @@
       }
     },
     {
-      "finding_id": "f_ed0623ff",
+      "finding_id": "f_5c01e164",
       "app_id": "appx",
       "type": "unreadable",
       "severity": "low",
@@ -233,7 +233,7 @@
       "verification": null,
       "note": "Area in affidavit could not be read reliably (confidence 0.62); please confirm it manually.",
       "finding_ids": [
-        "f_ed0623ff"
+        "f_5c01e164"
       ]
     },
     {
@@ -242,9 +242,9 @@
       "verification": null,
       "note": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed; Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'.",
       "finding_ids": [
-        "f_0874514f",
-        "f_625b906a",
-        "f_c0421c86"
+        "f_e35db98b",
+        "f_c436cec2",
+        "f_f76591c1"
       ]
     },
     {
@@ -253,8 +253,8 @@
       "verification": "verified",
       "note": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed; Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'.",
       "finding_ids": [
-        "f_0874514f",
-        "f_625b906a"
+        "f_e35db98b",
+        "f_c436cec2"
       ]
     },
     {
@@ -263,9 +263,9 @@
       "verification": "verification_pending",
       "note": "NOC expires on 2027-12-31 before the academic year ends (2028-06-30); NOC dated 2008-06-10 is earlier than trust registration 2009-04-15.",
       "finding_ids": [
-        "f_616cc077",
-        "f_c0421c86",
-        "f_429fda23"
+        "f_6b49dea6",
+        "f_f76591c1",
+        "f_5c2a8f31"
       ]
     }
   ]

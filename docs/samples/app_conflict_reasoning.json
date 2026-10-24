@@ -3,7 +3,7 @@
   "priority": 401,
   "findings": [
     {
-      "finding_id": "f_f597585b",
+      "finding_id": "f_ff896ea9",
       "app_id": "appx",
       "type": "expired",
       "severity": "high",
@@ -26,7 +26,7 @@
       }
     },
     {
-      "finding_id": "f_19f170b0",
+      "finding_id": "f_60aba3c4",
       "app_id": "appx",
       "type": "attribute_conflict",
       "severity": "high",
@@ -84,7 +84,7 @@
       }
     },
     {
-      "finding_id": "f_0dc00271",
+      "finding_id": "f_0b46b2be",
       "app_id": "appx",
       "type": "relationship_violation",
       "severity": "high",
@@ -127,7 +127,7 @@
       "evidence": {}
     },
     {
-      "finding_id": "f_6b4eb574",
+      "finding_id": "f_41bfeffb",
       "app_id": "appx",
       "type": "timeline_violation",
       "severity": "high",
@@ -168,7 +168,7 @@
       }
     },
     {
-      "finding_id": "f_8559cbcd",
+      "finding_id": "f_5f490518",
       "app_id": "appx",
       "type": "unreadable",
       "severity": "low",
@@ -207,7 +207,7 @@
       "verification": null,
       "note": "Area in affidavit could not be read reliably (confidence 0.62); please confirm it manually.",
       "finding_ids": [
-        "f_8559cbcd"
+        "f_5f490518"
       ]
     },
     {
@@ -216,9 +216,9 @@
       "verification": null,
       "note": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed; Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'.",
       "finding_ids": [
-        "f_19f170b0",
-        "f_0dc00271",
-        "f_6b4eb574"
+        "f_60aba3c4",
+        "f_0b46b2be",
+        "f_41bfeffb"
       ]
     },
     {
@@ -227,8 +227,8 @@
       "verification": null,
       "note": "Land parcel area conflicts: 2.5 in application_form vs 2.1 in land_deed; Land owner 'Shree Vidya Charitable Society' does not match the trust 'Shree Vidya Education Trust'.",
       "finding_ids": [
-        "f_19f170b0",
-        "f_0dc00271"
+        "f_60aba3c4",
+        "f_0b46b2be"
       ]
     },
     {
@@ -237,8 +237,8 @@
       "verification": null,
       "note": "NOC expires on 2027-12-31 before the academic year ends (2028-06-30); NOC dated 2008-06-10 is earlier than trust registration 2009-04-15.",
       "finding_ids": [
-        "f_f597585b",
-        "f_6b4eb574"
+        "f_ff896ea9",
+        "f_41bfeffb"
       ]
     }
   ]
