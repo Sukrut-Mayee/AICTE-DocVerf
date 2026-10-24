@@ -1,20 +1,10 @@
 """Checkpoint 1: YAML rule engine on the Appendix A fixtures (TRD §8.4, §17)."""
 
-import json
-from pathlib import Path
-
 import pytest
 from docverf.reasoning.rule_engine import _evaluate, load_checklist, load_rules, run_rules
-from docverf.schemas import ExtractionResult, FindingType, RuleOutcome, Severity
+from docverf.schemas import FindingType, RuleOutcome, Severity
 
-FIXTURES = Path(__file__).parent / "fixtures" / "apps"
-
-
-def load_app(name: str) -> list[ExtractionResult]:
-    return [
-        ExtractionResult.model_validate(json.loads(p.read_text(encoding="utf-8")))
-        for p in sorted((FIXTURES / name).glob("*.json"))
-    ]
+from tests.apps import load_app
 
 
 def outcomes(extractions):
