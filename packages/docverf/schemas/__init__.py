@@ -1,0 +1,53 @@
+"""Frozen data contracts (TRD §5). Import as `from docverf.schemas import ExtractionResult`."""
+
+from .enums import (
+    AuthorityTier,
+    CheckStatus,
+    Decision,
+    DocOverallStatus,
+    DocType,
+    FindingType,
+    Layer,
+    RuleOutcome,
+    Severity,
+    VerificationStatus,
+)
+from .models import (
+    AuditEntry,
+    BBox,
+    CheckResult,
+    Claim,
+    DocumentStatus,
+    ExtractionResult,
+    FieldValue,
+    Finding,
+    GroundTruth,
+    GroundTruthDoc,
+    InjectedDefect,
+    Region,
+)
+
+__all__ = [
+    "AuditEntry",
+    "AuthorityTier",
+    "BBox",
+    "CheckResult",
+    "CheckStatus",
+    "Claim",
+    "Decision",
+    "DocOverallStatus",
+    "DocType",
+    "DocumentStatus",
+    "ExtractionResult",
+    "FieldValue",
+    "Finding",
+    "FindingType",
+    "GroundTruth",
+    "GroundTruthDoc",
+    "InjectedDefect",
+    "Layer",
+    "Region",
+    "RuleOutcome",
+    "Severity",
+    "VerificationStatus",
+]
