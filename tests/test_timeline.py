@@ -25,7 +25,11 @@ def test_conflict_app_noc_predates_trust():
     assert summary([f]) == [("timeline_violation", "high", "TL_NOC_AFTER_TRUST")]
     assert f.message == "NOC dated 2008-06-10 is earlier than trust registration 2009-04-15"
     assert f.doc_ids == ["appx_application_form", "appx_noc"]
-    assert f.evidence == {"before": "2009-04-15", "after": "2008-06-10"}
+    assert f.evidence == {
+        "rule_description": "NOC must be issued after the trust was registered",
+        "before": "2009-04-15",
+        "after": "2008-06-10",
+    }
 
 
 def test_clean_app_has_no_timeline_findings():

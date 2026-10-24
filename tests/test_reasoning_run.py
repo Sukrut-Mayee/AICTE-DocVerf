@@ -406,3 +406,32 @@ def test_run_reasoning_passes_aicte_records_to_the_rules():
 def test_appendix_a_is_unchanged_by_records_that_show_payment():
     paid = {"payments": {"TER2027000123": {"paid": True}}}
     assert len(run_reasoning("appx", load_app("app_conflict"), [], paid)) == 5
+
+
+def test_every_rule_based_finding_carries_its_rule_description():
+    from docverf.reasoning.rule_engine import load_rules
+
+    description = {
+        r["id"]: r["description"] for d in ("rules", "graph", "timeline") for r in load_rules(d)
+    }
+    docs = load_app("app_conflict")
+    by_type = {d.doc_type.value: d for d in docs}
+    by_type["noc"].fields["ref_no"].confidence = 0.1  # rule engine: undetermined
+    by_type["land_deed"].fields["owner_name"].confidence = 0.1  # graph: unreadable
+    by_type["affidavit"].fields["land_area_declared"].unit = "bigha"  # unit finding: no rule
+    checks = [check("appx_noc", "ela", CheckStatus.SUSPICIOUS, Severity.MEDIUM)]
+    findings = run_reasoning("appx", docs, checks)
+
+    rule_based = [f for f in findings if f.rule_id]
+    assert {f.type.value for f in rule_based} >= {
+        "expired",
+        "attribute_conflict",
+        "timeline_violation",
+        "undetermined",
+        "unreadable",
+    }
+    for f in rule_based:
+        assert f.evidence["rule_description"] == description[f.rule_id], f.rule_id
+    others = [f for f in findings if not f.rule_id]
+    assert {f.type.value for f in others} == {"forensic_signal", "undetermined"}  # check + unit
+    assert all("rule_description" not in f.evidence for f in others)

@@ -85,6 +85,7 @@ def test_failure_evidence_lets_ui_highlight_the_box():
     (f,) = run_rules("appx", docs, load_checklist("eoa"), {})
     assert f.attribute == "valid_until" and f.claims == []
     assert f.evidence == {
+        "rule_description": "NOC must be valid until the end of the academic year",
         "field": "valid_until",
         "value": "2027-12-31",
         "confidence": 0.9,
