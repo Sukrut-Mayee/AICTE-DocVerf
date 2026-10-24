@@ -4,12 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 from docverf.config import get_settings
-from docverf.reasoning.entity_resolution import (
-    acres_per_unit,
-    names_match,
-    normalize_id,
-    to_acres,
-)
+from docverf.reasoning.entity_resolution import names_match, normalize_id
 from docverf.reasoning.rule_engine import load_rules, new_finding, new_finding_id, rule_title
 from docverf.schemas import (
     AuthorityTier,
@@ -24,6 +19,7 @@ from docverf.schemas import (
     Severity,
     VerificationStatus,
 )
+from docverf.units import acres_per_unit, to_acres
 
 # TRD §8.1: (doc_type, field) -> (entity type, attribute). Area fields are converted to acres.
 FIELD_MAP = {

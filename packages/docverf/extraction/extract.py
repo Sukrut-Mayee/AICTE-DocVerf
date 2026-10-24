@@ -17,6 +17,7 @@ from docverf.extraction.ocr import run_ocr
 from docverf.extraction.rules_extractor import rules_extract
 from docverf.extraction.vlm import vlm_extract
 from docverf.schemas import DocType, ExtractionResult, FieldValue, Region
+from docverf.units import acres_per_unit
 
 # Doc types supported by both extractors (rules + VLM), per TRD §6.
 _EXTRACTION_SUPPORTED = {
@@ -28,6 +29,10 @@ _EXTRACTION_SUPPORTED = {
 # Photos have no text to read: VLM only (no OCR, no rules).
 _VLM_ONLY = {DocType.LAB_PHOTO}
 _USES_VLM = _EXTRACTION_SUPPORTED | _VLM_ONLY
+
+# Two areas agree when they differ by at most this share of the larger one, after conversion to
+# acres (the same 1% as the reasoning rule LAND_AREA_AGREE).
+_AREA_TOLERANCE = 0.01
 
 # Minimum shorter side in pixels for quality gate (TRD §10).
 _MIN_SHORTER_SIDE = 800
@@ -92,11 +97,23 @@ def _check_quality(image_path: Path, blur_threshold: float) -> tuple[bool, str |
     return True, None
 
 
+def _acres(fv: FieldValue) -> float | None:
+    """The area of `fv` in acres, or None if it is not a number with a known unit."""
+    factor = acres_per_unit(fv.unit)
+    if factor is None or isinstance(fv.value, bool) or not isinstance(fv.value, (int, float)):
+        return None
+    return fv.value * factor
+
+
 def _values_agree(fv1: FieldValue, fv2: FieldValue) -> bool:
     """Compare two FieldValues for agreement after normalization.
 
-    Values must match; units must match when both are present.
+    Areas with known units are compared in acres within _AREA_TOLERANCE. Otherwise values
+    must match, and units must match when both are present.
     """
+    a, b = _acres(fv1), _acres(fv2)
+    if a is not None and b is not None:
+        return abs(a - b) <= _AREA_TOLERANCE * max(a, b)
     if fv1.value != fv2.value:
         return False
     if fv1.unit is not None and fv2.unit is not None and fv1.unit != fv2.unit:
