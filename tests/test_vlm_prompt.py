@@ -10,6 +10,7 @@ import docverf.extraction.extract as extract_module
 import docverf.extraction.vlm as vlm_module
 import pytest
 from docverf.extraction.vlm import _build_prompt, vlm_extract
+from docverf.reasoning.entity_graph import build_claims, unit_findings
 from docverf.schemas import DocType, ExtractionResult
 from PIL import Image
 
@@ -280,3 +281,124 @@ def test_other_doc_types_are_routed_as_before(monkeypatch, tmp_path, pipeline):
     assert pipeline == {"ocr": 1, "rules": 0}
     extract_module.extract(str(image(tmp_path)), "d", "a", DocType.LAND_DEED)
     assert len(calls) == 1 and pipeline == {"ocr": 2, "rules": 1}
+
+
+# ---- prompt wording ----
+
+
+@pytest.mark.parametrize("doc_type", VLM_TYPES)
+def test_prompt_says_document_image(doc_type):
+    text = prompt_text(doc_type)
+    assert "provided document image and return ONLY a JSON object" in text
+    assert "page image" not in text
+
+
+@pytest.mark.parametrize("doc_type", [DocType.LAND_DEED, DocType.AFFIDAVIT])
+def test_area_hint_asks_for_number_and_unit(doc_type):
+    hint = 'string: number and unit as printed, e.g. "2.5 acre" (keep the unit)'
+    assert hint in prompt_text(doc_type)
+
+
+# ---- area answers become value + unit ----
+
+AREA_FIELDS = [(DocType.LAND_DEED, "area"), (DocType.AFFIDAVIT, "land_area_declared")]
+
+
+@pytest.mark.parametrize("doc_type, field", AREA_FIELDS)
+@pytest.mark.parametrize(
+    "given, number, unit",
+    [
+        ("2.10 acre", 2.1, "acre"),
+        ("1.8 acres", 1.8, "acres"),
+        ("0.85 ha", 0.85, "ha"),
+        ("2 एकर", 2.0, "एकर"),
+        ("२.५ एकर", 2.5, "एकर"),  # Devanagari digits
+        (2.5, 2.5, None),  # a bare number: no unit is guessed
+        ("2.5", 2.5, None),
+    ],
+)
+def test_area_is_split_into_value_and_unit(
+    monkeypatch, tmp_path, doc_type, field, given, number, unit
+):
+    fake_ollama(monkeypatch, {field: given})
+    fv = vlm_extract(image(tmp_path), doc_type)[field]
+    assert (fv.value, fv.unit) == (number, unit)
+    assert fv.raw == (given if isinstance(given, str) else None)  # the printed text is kept
+
+
+@pytest.mark.parametrize("doc_type, field", AREA_FIELDS)
+@pytest.mark.parametrize(
+    "given",
+    ["abc", "acre", "", "N/A", "-", "nan", "inf", "-3", "-3 acre", None, True, [2.5],
+     {"value": 2.5, "unit": "acre"}],
+)  # fmt: skip
+def test_area_without_a_usable_number_is_dropped(monkeypatch, tmp_path, doc_type, field, given):
+    fake_ollama(monkeypatch, {field: given})
+    assert field not in vlm_extract(image(tmp_path), doc_type)
+
+
+@pytest.mark.parametrize(
+    "given, acres",
+    [("2.10 acre", 2.1), ("1.8 acres", 1.8), ("0.85 ha", 0.85 * 2.47105), ("2 एकर", 2.0),
+     ("40 guntha", 1.0)],
+)  # fmt: skip
+def test_vlm_area_reaches_reasoning_with_its_unit(monkeypatch, tmp_path, given, acres):
+    """The unit text goes through reasoning's own normalisation (acres_per_unit)."""
+    fake_ollama(monkeypatch, {"owner_name": "Shree Vidya Education Trust", "area": given})
+    fields = vlm_extract(image(tmp_path), DocType.LAND_DEED)
+    deed = ExtractionResult(
+        doc_id="appx_land_deed", app_id="appx", doc_type=DocType.LAND_DEED, fields=fields
+    )
+    (claim,) = [c for c in build_claims([deed], []) if c.attribute == "area"]
+    assert claim.value == pytest.approx(acres)
+    assert unit_findings("appx", [deed]) == []
+
+
+@pytest.mark.parametrize("given, message", [("3 bigha", "'bigha'"), (2.5, "no unit")])
+def test_unknown_or_missing_unit_is_reported_by_reasoning_not_guessed(
+    monkeypatch, tmp_path, given, message
+):
+    fake_ollama(monkeypatch, {"area": given})
+    fields = vlm_extract(image(tmp_path), DocType.LAND_DEED)
+    deed = ExtractionResult(
+        doc_id="appx_land_deed", app_id="appx", doc_type=DocType.LAND_DEED, fields=fields
+    )
+    assert [c for c in build_claims([deed], []) if c.attribute == "area"] == []
+    (finding,) = unit_findings("appx", [deed])
+    assert message in finding.message
+
+
+# ---- null words ----
+
+
+@pytest.mark.parametrize("word", ["null", "NULL", "None", "n/a", "N/A", " n/a ", "-", " - "])
+def test_null_words_are_treated_as_null(monkeypatch, tmp_path, word):
+    fake_ollama(monkeypatch, {"owner_name": word, "village": "Pune"})
+    assert set(vlm_extract(image(tmp_path), DocType.LAND_DEED)) == {"village"}
+
+
+def test_none_stays_a_real_value_for_mortgage_status_only(monkeypatch, tmp_path):
+    """'none' means no mortgage; LAND_NOT_MORTGAGED compares against it."""
+    fake_ollama(monkeypatch, {"mortgage_status": "none", "owner_name": "none"})
+    result = vlm_extract(image(tmp_path), DocType.LAND_DEED)
+    assert set(result) == {"mortgage_status"} and result["mortgage_status"].value == "none"
+
+
+@pytest.mark.parametrize("word", ["null", "n/a", "-"])
+def test_other_null_words_still_null_for_mortgage_status(monkeypatch, tmp_path, word):
+    fake_ollama(monkeypatch, {"mortgage_status": word, "village": "Pune"})
+    assert set(vlm_extract(image(tmp_path), DocType.LAND_DEED)) == {"village"}
+
+
+def test_a_real_value_that_merely_contains_a_null_word_is_kept(monkeypatch, tmp_path):
+    fake_ollama(monkeypatch, {"owner_name": "Nonesuch Trust", "village": "N/A Nagar"})
+    result = vlm_extract(image(tmp_path), DocType.LAND_DEED)
+    assert (result["owner_name"].value, result["village"].value) == ("Nonesuch Trust", "N/A Nagar")
+
+
+def test_null_words_inside_programs_are_dropped(monkeypatch, tmp_path):
+    fake_ollama(monkeypatch, {"body": "NBA", "programs": ["N/A", "BE Computer", "-"]})
+    result = vlm_extract(image(tmp_path), DocType.ACCREDITATION_CERT)
+    assert result["programs"].value == ["BE Computer"]
+    fake_ollama(monkeypatch, {"body": "NBA", "programs": ["none"]})
+    assert "programs" not in vlm_extract(image(tmp_path), DocType.ACCREDITATION_CERT)
