@@ -6,12 +6,14 @@ package required). Never calls a cloud API unless ALLOW_CLOUD_AI=true (TRD §1 r
 
 import base64
 import json
+import math
 import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
 
 from docverf.config import get_settings
+from docverf.extraction.normalize import devanagari_to_ascii_digits, normalize_area
 from docverf.schemas import DocType, FieldValue
 
 # Runtime fallback when VLM_MODEL is blank in config (TRD §15). Documented here;
@@ -23,6 +25,11 @@ _VLM_CONFIDENCE = 0.5
 
 # HTTP timeout for the Ollama call (seconds).
 _OLLAMA_TIMEOUT_S = 60
+
+# Text a model writes instead of a JSON null. "none" is also the real value of mortgage_status.
+_NULL_WORDS = {"null", "none", "n/a", "-"}
+# Fields that hold an area: the model answers "<number> <unit>" and we split it.
+_AREA_FIELDS = {"area", "land_area_declared"}
 
 # Field names per doc type, per TRD §6.
 _FIELD_NAMES: dict[DocType, list[str]] = {
@@ -70,7 +77,7 @@ _FIELD_HINTS: dict[DocType, dict[str, str]] = {
     DocType.LAND_DEED: {
         "owner_name": "string (person/organization name)",
         "survey_no": "string (e.g. 45/2)",
-        "area": "number with unit (e.g. 2.5 acre)",
+        "area": 'string: number and unit as printed, e.g. "2.5 acre" (keep the unit)',
         "village": "string",
         "district": "string",
         "registration_no": "string",
@@ -91,7 +98,7 @@ _FIELD_HINTS: dict[DocType, dict[str, str]] = {
         "institute_name": "string",
         "application_no": "string",
         "date": "ISO date YYYY-MM-DD",
-        "land_area_declared": "number with unit (e.g. 2.5 acre)",
+        "land_area_declared": 'string: number and unit as printed, e.g. "2.5 acre" (keep the unit)',
         "notary_reg_no": "string",
     },
     DocType.ACCREDITATION_CERT: {
@@ -126,7 +133,7 @@ def _build_prompt(doc_type: DocType) -> str:
     hints = _FIELD_HINTS.get(doc_type, {})
     lines = [
         "You are a document extraction model. Extract the following fields from the",
-        "provided document page image and return ONLY a JSON object.",
+        "provided document image and return ONLY a JSON object.",
         "",
         "Fields to extract:",
     ]
@@ -184,13 +191,16 @@ def _strip_code_fences(text: str) -> str:
     return text
 
 
-def _validate_field_value(raw_value: Any) -> FieldValue | None:
-    """Build a FieldValue from a raw VLM value, or None if invalid."""
+def _validate_field_value(
+    raw_value: Any, unit: str | None = None, raw: str | None = None
+) -> FieldValue | None:
+    """Build a FieldValue from a cleaned VLM value, or None if invalid."""
     try:
         return FieldValue(
             value=raw_value,
+            unit=unit,
             confidence=_VLM_CONFIDENCE,
-            raw=raw_value if isinstance(raw_value, str) else None,
+            raw=raw,
             page=None,
             bbox=None,
             extractor_agreement=None,
@@ -199,12 +209,46 @@ def _validate_field_value(raw_value: Any) -> FieldValue | None:
         return None
 
 
+def _is_null_word(name: str, text: str) -> bool:
+    word = text.strip().lower()
+    return word in _NULL_WORDS and not (name == "mortgage_status" and word == "none")
+
+
+def _parse_area(value: Any) -> tuple[float, str | None] | None:
+    """Split an area answer into (number, unit as written), or None if it has no usable number.
+
+    "2.10 acre" -> (2.1, "acre"); a bare number keeps unit None (reasoning then reports the
+    missing unit instead of guessing one). The unit stays as printed: reasoning's
+    acres_per_unit already knows the spellings (acres, ha, एकर, ...)."""
+    number: float
+    unit: str | None = None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        number = value
+    elif isinstance(value, str):
+        parsed = normalize_area(value)
+        if parsed is not None:
+            number, unit = parsed
+        else:
+            try:
+                number = float(devanagari_to_ascii_digits(value.strip()))
+            except ValueError:
+                return None
+    else:
+        return None
+    return (number, unit) if math.isfinite(number) and number >= 0 else None
+
+
 def _clean_value(name: str, value: Any) -> Any:
     """The value to keep for a field, or None when the field must be treated as absent.
 
-    A null, a blank string or an empty list never becomes a value. equipment_count must be an
-    integer and programs a list of strings; anything else is dropped rather than guessed."""
-    if value is None or (isinstance(value, str) and not value.strip()) or value == []:
+    A null, a blank string, a null word ("null", "n/a", ...) or an empty list never becomes a
+    value. equipment_count must be an integer and programs a list of strings; anything else is
+    dropped rather than guessed."""
+    if value is None or value == []:
+        return None
+    if isinstance(value, str) and (not value.strip() or _is_null_word(name, value)):
         return None
     if name == "equipment_count":
         if isinstance(value, bool):
@@ -217,7 +261,10 @@ def _clean_value(name: str, value: Any) -> Any:
     if name == "programs":
         if not isinstance(value, list):
             return None
-        return [p for p in value if isinstance(p, str) and p.strip()] or None
+        names = [
+            p for p in value if isinstance(p, str) and p.strip() and not _is_null_word(name, p)
+        ]
+        return names or None
     return value
 
 
@@ -240,7 +287,13 @@ def _parse_response(response_text: str, doc_type: DocType) -> dict[str, FieldVal
         value = _clean_value(name, raw_value)
         if value is None:
             continue
-        fv = _validate_field_value(value)
+        unit = None
+        if name in _AREA_FIELDS:
+            parsed = _parse_area(value)
+            if parsed is None:
+                continue
+            value, unit = parsed
+        fv = _validate_field_value(value, unit, raw_value if isinstance(raw_value, str) else None)
         if fv is not None:
             result[name] = fv
     return result
