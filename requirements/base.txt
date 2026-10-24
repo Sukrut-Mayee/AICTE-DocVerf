@@ -1,0 +1,14 @@
+# Runtime for services/api, services/worker, services/mock_issuer and the docverf core.
+alembic
+celery[redis]
+fastapi
+httpx
+minio
+psycopg[binary]
+pydantic
+pyjwt
+python-dotenv
+python-multipart
+pyyaml
+sqlalchemy
+uvicorn[standard]

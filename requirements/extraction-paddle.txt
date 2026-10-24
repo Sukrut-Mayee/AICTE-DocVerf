@@ -1,0 +1,4 @@
+# OCR_ENGINE=paddleocr. Install in its own environment: Paddle and torch ship conflicting CUDA libs.
+-r base.txt
+paddleocr
+paddlepaddle

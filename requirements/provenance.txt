@@ -1,0 +1,10 @@
+# Needs system packages: exiftool (pyexiftool) and libzbar0 (pyzbar fallback). See README.
+-r base.txt
+imagehash
+pikepdf
+pillow
+pyexiftool
+pyhanko
+pymupdf
+pyzbar
+zxing-cpp

@@ -1,0 +1,11 @@
+# Document understanding (TRD §10), without an OCR engine. Pick one: extraction-paddle.txt or extraction-surya.txt.
+-r base.txt
+dateparser
+indic-transliteration
+numpy
+opencv-python-headless
+pdf2image
+pillow
+pint
+pymupdf
+rapidfuzz

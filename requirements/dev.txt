@@ -1,0 +1,7 @@
+# Test, lint and type tooling (TRD §3).
+-r base.txt
+mypy
+pre-commit
+pytest
+ruff
+types-PyYAML

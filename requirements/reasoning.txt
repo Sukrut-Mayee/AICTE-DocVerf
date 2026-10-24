@@ -1,0 +1,8 @@
+# Rule engine, entity graph, timeline (TRD §8).
+-r base.txt
+dateparser
+indic-transliteration
+networkx
+pint
+pyyaml
+rapidfuzz

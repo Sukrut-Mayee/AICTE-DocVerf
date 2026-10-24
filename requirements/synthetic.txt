@@ -1,0 +1,7 @@
+# Run `playwright install chromium` once. WeasyPrint is optional and not listed (painful on native Windows; use WSL2/Docker).
+-r base.txt
+augraphy
+faker
+jinja2
+pillow
+playwright

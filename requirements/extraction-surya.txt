@@ -1,0 +1,3 @@
+# OCR_ENGINE=surya. Install in its own environment (pulls torch); use the CPU torch index if no GPU.
+-r base.txt
+surya-ocr

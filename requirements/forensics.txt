@@ -1,0 +1,6 @@
+# Pixel forensics (TRD §9.2).
+-r base.txt
+numpy
+opencv-python-headless
+pillow
+scikit-image
