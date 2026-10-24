@@ -33,4 +33,4 @@ lint:
 	$(PY) -m ruff check . && $(PY) -m ruff format --check .
 
 gen-data:
-	$(PY) -m docverf.synthetic data/synthetic
+	$(PY) -m docverf.synthetic --out data/synthetic --n 20

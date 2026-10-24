@@ -128,53 +128,30 @@ def test_ledger(tmp_path, monkeypatch):
         anchor_root(0, "0" * 64)
 
 
-@pytest.mark.skip(reason="generator code not pushed yet")
-def test_synthetic():
-    from docverf.synthetic.generate import generate_dataset
-    from docverf.schemas import GroundTruth, DocType
-    from pathlib import Path
+def test_synthetic(tmp_path):
+    """The generator (TRD §13); see test_synthetic*.py. PDFs are printed if a browser exists."""
     import json
 
-    # generate_dataset is now implemented – verify it produces valid output
-    out_dir = Path("test_tmp_synthetic")
-    if out_dir.exists():
-        import shutil
-        shutil.rmtree(out_dir)
+    from docverf.schemas import GroundTruth
+    from docverf.synthetic.generate import generate_dataset
+    from docverf.synthetic.render import find_browser
 
-    truths = generate_dataset(out_dir, n=2)
+    render = find_browser() is not None
+    truths = generate_dataset(tmp_path, n_apps=2, render=render)
 
-    # Should produce exactly 2 applications
     assert len(truths) == 2
-
-    # Each truth should be a GroundTruth schema-valid object
     for t in truths:
-        assert isinstance(t, GroundTruth)
-        assert t.app_id.startswith("app")
-        assert len(t.documents) >= 2  # at least application_form + one doc type
-        assert "application_form" in {d.doc_type for d in t.documents}
-        assert "land_deed" in {d.doc_type for d in t.documents}
-        assert "noc" in {d.doc_type for d in t.documents}
+        assert isinstance(t, GroundTruth) and t.app_id.startswith("app")
+        assert {"application_form", "land_deed", "noc"} <= {d.doc_type.value for d in t.documents}
 
-    # Check file structure
     for t in truths:
-        app_dir = out_dir / t.app_id
-        assert (app_dir / "application_form.json").is_file()
-        assert (app_dir / "ground_truth.json").is_file()
-        assert (app_dir / "land_deed.html").is_file()
-        assert (app_dir / "noc.html").is_file()
-
-    # Verify ground_truth.json is valid JSON with required fields
-    for t in truths:
-        gt_path = out_dir / t.app_id / "ground_truth.json"
-        gt = json.loads(gt_path.read_text(encoding="utf-8"))
-        assert "app_id" in gt
-        assert "documents" in gt
-        assert "true_fields" in gt
-        assert "injected_defects" in gt
-
-    # Clean up temporary directory
-    import shutil
-    shutil.rmtree(out_dir)
+        app_dir = tmp_path / t.app_id
+        for name in ("application_form.json", "ground_truth.json", "land_deed.html", "noc.html"):
+            assert (app_dir / name).is_file(), name
+        if render:
+            assert (app_dir / "land_deed.pdf").is_file() and (app_dir / "noc.pdf").is_file()
+        gt = json.loads((app_dir / "ground_truth.json").read_text(encoding="utf-8"))
+        assert {"app_id", "documents", "true_fields", "injected_defects"} <= set(gt)
 
 
 def test_eval():
@@ -186,7 +163,7 @@ def test_eval():
 
 @pytest.mark.parametrize(
     "module",
-    ["provenance", "forensics", "verification", "ledger", "synthetic"],
+    ["provenance", "forensics", "verification", "ledger"],
 )
 def test_cli_stub_parses_args(module):
     """TRD §1 rule 7: `python -m docverf.<module> <path>` exists (fails until implemented)."""

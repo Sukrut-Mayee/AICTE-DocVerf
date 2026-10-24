@@ -15,6 +15,9 @@ dependencies = ["pydantic>=2.7", "python-dotenv>=1.0"]
 where = ["packages"]
 include = ["docverf*"]
 
+[tool.setuptools.package-data]
+"docverf.synthetic" = ["templates/*.j2"]
+
 [tool.ruff]
 line-length = 100
 force-exclude = true

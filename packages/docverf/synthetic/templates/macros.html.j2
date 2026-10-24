@@ -1,0 +1,5 @@
+{# One labelled row. `local` is the Marathi/Hindi label (may be empty); `english` is the exact label
+   the rules extractor looks for (rules_extractor._LABEL_SPECS). #}
+{% macro row(local, english, value) -%}
+<div class="field-row"><div class="label">{% if local %}<span class="label-local">{{ local }}</span> / {% endif %}{{ english }}</div><div class="value">{{ value }}</div></div>
+{%- endmacro %}
