@@ -1,0 +1,48 @@
+{
+  "doc_id": "appx_application_form",
+  "app_id": "appx",
+  "doc_type": "application_form",
+  "fields": {
+    "institute_name": {
+      "value": "Shree Vidya Institute of Technology",
+      "confidence": 1.0
+    },
+    "aicte_permanent_id": {
+      "value": "1-9876543",
+      "confidence": 1.0
+    },
+    "application_no": {
+      "value": "1-46200000001",
+      "confidence": 1.0
+    },
+    "trust_name": {
+      "value": "Shree Vidya Education Trust",
+      "confidence": 1.0
+    },
+    "trust_reg_no": {
+      "value": "E-12345/PUNE",
+      "confidence": 1.0
+    },
+    "trust_reg_date": {
+      "value": "2009-04-15",
+      "confidence": 1.0
+    },
+    "land_survey_no": {
+      "value": "45/2",
+      "confidence": 1.0
+    },
+    "land_area": {
+      "value": 2.5,
+      "unit": "acre",
+      "confidence": 1.0
+    },
+    "application_date": {
+      "value": "2027-01-20",
+      "confidence": 1.0
+    },
+    "ter_txn_id": {
+      "value": "TER2027000123",
+      "confidence": 1.0
+    }
+  }
+}

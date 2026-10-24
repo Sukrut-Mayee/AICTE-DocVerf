@@ -1,0 +1,52 @@
+{
+  "doc_id": "appx_land_deed",
+  "app_id": "appx",
+  "doc_type": "land_deed",
+  "fields": {
+    "owner_name": {
+      "value": "Shree Vidya Education Trust",
+      "confidence": 0.88,
+      "page": 1,
+      "bbox": [
+        0.12,
+        0.3,
+        0.7,
+        0.34
+      ],
+      "extractor_agreement": true
+    },
+    "survey_no": {
+      "value": "45/2",
+      "confidence": 0.95,
+      "page": 1,
+      "bbox": [
+        0.12,
+        0.36,
+        0.3,
+        0.39
+      ],
+      "extractor_agreement": true
+    },
+    "area": {
+      "value": 2.5,
+      "unit": "acre",
+      "confidence": 0.93,
+      "page": 1,
+      "bbox": [
+        0.12,
+        0.41,
+        0.35,
+        0.44
+      ],
+      "extractor_agreement": true
+    },
+    "registration_date": {
+      "value": "2010-02-03",
+      "confidence": 0.9
+    },
+    "mortgage_status": {
+      "value": "none",
+      "confidence": 0.85
+    }
+  }
+}

@@ -1,0 +1,18 @@
+- id: TL_NOC_AFTER_TRUST
+  before: trust.reg_date
+  after: noc.issue_date
+  severity: high
+  message: "NOC dated {after} is earlier than trust registration {before}"
+- id: TL_NOC_ISSUE_BEFORE_EXPIRY
+  before: noc.issue_date
+  after: noc.valid_until
+  severity: high
+- id: TL_DEED_BEFORE_APPLICATION
+  before: land_deed.registration_date
+  after: form.application_date
+  severity: medium
+- id: TL_AFFIDAVIT_IN_WINDOW
+  within: affidavit.date
+  start: config.APPLICATION_WINDOW_START
+  end: config.APPLICATION_WINDOW_END
+  severity: medium

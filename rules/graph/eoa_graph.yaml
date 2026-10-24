@@ -1,0 +1,23 @@
+- id: LAND_AREA_AGREE
+  type: attribute_agree
+  entity_type: land_parcel
+  attribute: area
+  tolerance: {relative: 0.01, unit: acre}
+  min_claims: 2
+- id: INSTITUTE_NAME_AGREE
+  type: attribute_agree
+  entity_type: institute
+  attribute: name
+  tolerance: {fuzzy: 90}
+- id: SURVEY_NO_AGREE
+  type: attribute_agree
+  entity_type: land_parcel
+  attribute: survey_no
+  tolerance: {exact: true}
+- id: OWNER_IS_TRUST
+  type: relationship_equal
+  left:  {entity_type: land_parcel, attribute: owner}
+  right: {entity_type: trust, attribute: name}
+  tolerance: {fuzzy: 90}
+  severity: high
+  message: "Land owner '{left}' does not match the trust '{right}'"

@@ -1,0 +1,27 @@
+- id: NOC_VALID_FOR_YEAR
+  description: NOC must be valid until the end of the academic year
+  illustrative: true                 # value to be configured from the Approval Process Handbook
+  type: field_compare                # field_compare | field_present | field_regex | field_equals | required_docs
+  left:  {doc_type: noc, field: valid_until}
+  op: gte                            # eq | ne | gt | gte | lt | lte
+  right: {config: ACADEMIC_YEAR_END}
+  severity: high
+  finding_type: expired
+  message: "NOC expires on {left} before the academic year ends ({right})"
+
+- id: NOC_REF_FORMAT
+  type: field_regex
+  field: {doc_type: noc, field: ref_no}
+  pattern: '^FIRE/[A-Z]{2}/\d{4}/\d{6}$'
+  severity: medium
+  layer: C
+  finding_type: rule_failed
+  message: "NOC reference number '{value}' does not match the expected format"
+
+- id: LAND_NOT_MORTGAGED
+  type: field_equals
+  field: {doc_type: land_deed, field: mortgage_status}
+  value: none
+  severity: medium
+  finding_type: rule_failed
+  message: "Land deed shows mortgage status '{value}'"

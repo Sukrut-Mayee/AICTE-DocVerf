@@ -1,0 +1,30 @@
+{
+  "doc_id": "appx_noc",
+  "app_id": "appx",
+  "doc_type": "noc",
+  "fields": {
+    "issuer": {
+      "value": "Maharashtra Fire Services",
+      "confidence": 0.92
+    },
+    "ref_no": {
+      "value": "FIRE/MH/2008/004512",
+      "confidence": 0.91,
+      "extractor_agreement": true
+    },
+    "institute_name": {
+      "value": "Shree Vidya Institute of Technology",
+      "confidence": 0.94
+    },
+    "issue_date": {
+      "value": "2025-11-10",
+      "confidence": 0.9,
+      "extractor_agreement": true
+    },
+    "valid_until": {
+      "value": "2028-12-31",
+      "confidence": 0.9,
+      "extractor_agreement": true
+    }
+  }
+}

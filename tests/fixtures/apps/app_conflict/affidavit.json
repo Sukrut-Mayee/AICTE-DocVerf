@@ -1,0 +1,25 @@
+{
+  "doc_id": "appx_affidavit",
+  "app_id": "appx",
+  "doc_type": "affidavit",
+  "fields": {
+    "institute_name": {
+      "value": "Shree Vidya Inst. of Tech.",
+      "confidence": 0.89
+    },
+    "application_no": {
+      "value": "1-46200000001",
+      "confidence": 0.93
+    },
+    "date": {
+      "value": "2027-01-18",
+      "confidence": 0.92
+    },
+    "land_area_declared": {
+      "value": 2.5,
+      "unit": "acre",
+      "confidence": 0.62,
+      "extractor_agreement": false
+    }
+  }
+}
