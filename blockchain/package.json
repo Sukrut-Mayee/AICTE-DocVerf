@@ -1,0 +1,18 @@
+{
+  "name": "aictedocverf-blockchain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hardhat project for AICTE DocVerf AuditAnchor contract (TRD §14)",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.ts --network besu",
+    "deploy:localhost": "hardhat run scripts/deploy.ts --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
