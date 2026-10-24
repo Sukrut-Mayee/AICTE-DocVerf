@@ -29,7 +29,9 @@ def test_provenance():
 def test_extraction():
     from docverf.extraction.extract import extract
 
-    with pytest.raises(NotImplementedError):
+    # Module is implemented: no longer raises NotImplementedError.
+    # Missing file raises FileNotFoundError.
+    with pytest.raises(FileNotFoundError):
         extract(P, "app001_noc", "app001", DocType.NOC)
 
 
@@ -87,7 +89,7 @@ def test_eval():
 
 @pytest.mark.parametrize(
     "module",
-    ["provenance", "extraction", "forensics", "reasoning", "verification", "ledger", "synthetic"],
+    ["provenance", "forensics", "reasoning", "verification", "ledger", "synthetic"],
 )
 def test_cli_stub_parses_args(module):
     """TRD §1 rule 7: `python -m docverf.<module> <path>` exists (fails until implemented)."""
