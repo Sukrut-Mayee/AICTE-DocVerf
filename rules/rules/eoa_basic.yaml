@@ -25,3 +25,10 @@
   severity: medium
   finding_type: rule_failed
   message: "Land deed shows mortgage status '{value}'"
+
+- id: REQUIRED_DOCS
+  type: required_docs
+  checklist: eoa                     # reads rules/checklists/eoa.yaml
+  severity: high
+  finding_type: missing_doc
+  message: "Required document '{doc_type}' is missing"

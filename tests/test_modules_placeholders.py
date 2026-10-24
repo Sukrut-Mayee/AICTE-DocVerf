@@ -10,7 +10,8 @@ from pathlib import Path
 import pytest
 from docverf.schemas import DocType
 
-P = Path("x")
+P = "x"  # path arguments are str (TRD §19 Q1)
+PP = Path("x")  # synthetic/eval stubs still take Path
 
 
 def test_provenance():
@@ -19,19 +20,24 @@ def test_provenance():
     with pytest.raises(NotImplementedError):
         hash_file(P)
 
+    from docverf.provenance.duplicates import check_duplicates
+
+    with pytest.raises(NotImplementedError):
+        check_duplicates("app001", "app001_noc", {"sha256": "0"}, {})
+
 
 def test_extraction():
     from docverf.extraction.extract import extract
 
     with pytest.raises(NotImplementedError):
-        extract(P, DocType.NOC)
+        extract(P, "app001_noc", "app001", DocType.NOC)
 
 
 def test_forensics():
     from docverf.forensics.ela import run_ela
 
     with pytest.raises(NotImplementedError):
-        run_ela(P)
+        run_ela(P, "app001_noc")
 
 
 def test_reasoning():
@@ -39,6 +45,11 @@ def test_reasoning():
 
     with pytest.raises(NotImplementedError):
         run_reasoning("appx", [], [])
+
+    from docverf.reasoning.cross_institution import check_cross_institution
+
+    with pytest.raises(NotImplementedError):
+        check_cross_institution("appx", [], {})
 
 
 def test_verification():
@@ -54,19 +65,24 @@ def test_ledger():
     with pytest.raises(NotImplementedError):
         append("decision", {})
 
+    from docverf.ledger.anchor import anchor_root
+
+    with pytest.raises(NotImplementedError):
+        anchor_root(0, "0" * 64)
+
 
 def test_synthetic():
     from docverf.synthetic.generate import generate_dataset
 
     with pytest.raises(NotImplementedError):
-        generate_dataset(P)
+        generate_dataset(PP)
 
 
 def test_eval():
     from eval.metrics import evaluate
 
     with pytest.raises(NotImplementedError):
-        evaluate(P, P)
+        evaluate(PP, PP)
 
 
 @pytest.mark.parametrize(

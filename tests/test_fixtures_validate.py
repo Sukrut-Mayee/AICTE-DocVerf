@@ -34,3 +34,14 @@ def test_clean_variant_differs_only_as_specified():
     assert conflict_deed["fields"]["area"]["value"] == 2.1
     noc = load("app_clean", "noc")["fields"]
     assert (noc["issue_date"]["value"], noc["valid_until"]["value"]) == ("2025-11-10", "2028-12-31")
+
+
+def test_clean_affidavit_area_is_readable():
+    """TRD v0.2 Appendix A: app_clean must yield zero findings, so no low-confidence field."""
+    area = json.loads((FIXTURES / "app_clean" / "affidavit.json").read_text(encoding="utf-8"))[
+        "fields"
+    ]["land_area_declared"]
+    assert area["confidence"] == 0.92 and area["extractor_agreement"] is True
+    for path in (FIXTURES / "app_clean").glob("*.json"):
+        for name, field in json.loads(path.read_text(encoding="utf-8"))["fields"].items():
+            assert field["confidence"] >= 0.75, f"{path.name}:{name}"

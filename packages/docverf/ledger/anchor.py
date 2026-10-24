@@ -1,9 +1,9 @@
 """Anchor the audit-log head on Hyperledger Besu via web3.py (TRD §14)."""
 
 
-def anchor_root(seq: int, head_hash: str) -> str:
-    """Call AuditAnchor.anchor(seq, rootHash). Hashes only, never documents or personal data.
+def anchor_root(seq: int, root_hash: str) -> str:
+    """Call AuditAnchor.anchor(seq, rootHash) and return the transaction hash (hex, §19 Q5).
 
-    TODO(question): TRD §14 does not specify the return value; assumed to be the tx hash.
+    Hashes only, never documents or personal data.
     """
     raise NotImplementedError

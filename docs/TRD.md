@@ -1,6 +1,6 @@
 # TRD — AICTE DocVerf
 
-**Version:** 0.1 · **Date:** 2026-10-24 · **Owner:** Sukrut Mayee (team lead)
+**Version:** 0.2 (adds §19 resolved questions) · **Date:** 2026-10-24 · **Owner:** Sukrut Mayee (team lead)
 **Repo:** https://github.com/Sukrut-Mayee/AICTE-DocVerf
 **Companion doc:** `docs/PRD.md` (what and why)
 
@@ -14,7 +14,7 @@
 2. **Lean code.** No abstraction without a second use. If it works in fewer lines, use fewer lines. No speculative features.
 3. **Stay in your module.** Only edit files in the module you were asked to work on, plus its tests. Shared code goes through the team lead.
 4. **No new dependencies silently.** If you add a package, add it (pinned) to the right `requirements/*.txt` file and mention it in your summary.
-5. **Pure functions where possible.** Modules in `packages/docverf/` take inputs and return schema objects. Only `verification/` and `ledger/` may make network calls. Only `services/` touch the database, queue and object storage.
+5. **Pure functions where possible.** Modules in `packages/docverf/` take inputs and return schema objects. Only `verification/` and `ledger/` may make network calls. Only `services/` touch the queue and object storage. Databases: `services/` own the main tables; `ledger/` is the one exception and owns the `audit_log` and `anchors` tables through its own store (see §19).
 6. **Config from env.** Read thresholds, URLs and paths from environment variables via `docverf.config` (§15). Rule values come from YAML in `rules/`.
 7. **Every module has a CLI** (`python -m docverf.<module> ...`) that runs on a file or folder and writes schema-valid JSON to `data/out/<module>/`.
 8. **Tests.** Add pytest tests using fixtures in `tests/fixtures/`. A module is not done until its tests pass and its output validates against the schemas.
@@ -443,6 +443,16 @@ Tolerances: area ±1% after unit conversion to acres; names via the fuzzy thresh
 ```
 
 ```yaml
+# rules/rules/eoa_basic.yaml (continued)
+- id: REQUIRED_DOCS
+  type: required_docs
+  checklist: eoa                     # reads rules/checklists/eoa.yaml
+  severity: high
+  finding_type: missing_doc
+  message: "Required document '{doc_type}' is missing"
+```
+
+```yaml
 # rules/checklists/eoa.yaml
 category: eoa
 required_docs: [application_form, land_deed, noc, affidavit]
@@ -748,9 +758,57 @@ JWT_SECRET=dev-secret
 
 ---
 
+## 19. Resolved questions (v0.2)
+
+**Q1 — IDs in function signatures.** Every function that returns a schema object needing IDs receives them explicitly:
+```python
+# provenance
+hash_file(path: str) -> dict[str, str]                      # {"sha256": ..., "phash": ...}
+check_pdf_signature(path: str, doc_id: str) -> CheckResult
+decode_qr(path: str, doc_id: str) -> CheckResult
+extract_metadata(path: str, doc_id: str) -> CheckResult
+# forensics
+run_ela(image_path: str, doc_id: str, regions: list[Region] | None = None) -> CheckResult
+detect_copy_move(image_path: str, doc_id: str, regions: list[Region] | None = None) -> CheckResult
+noise_inconsistency(image_path: str, doc_id: str, regions: list[Region] | None = None) -> CheckResult
+ai_gen(image_path: str, doc_id: str) -> CheckResult
+# extraction
+extract(file_path: str, doc_id: str, app_id: str, doc_type: DocType | None = None) -> ExtractionResult
+```
+
+**Q2 — `check_duplicates` types.**
+```python
+HashIndex = dict[str, list[tuple[str, str]]]   # hash value -> [(app_id, doc_id), ...]
+check_duplicates(app_id: str, doc_id: str, hashes: dict[str, str], index: HashIndex) -> list[CheckResult]
+```
+Pure function: it does not mutate `index`; the caller adds the new hashes afterwards.
+
+**Q3 — Ledger DB access.** `ledger/` owns its storage. `AuditLog(db_url: str = config.DATABASE_URL)` uses SQLAlchemy and works with SQLite for local dev (e.g. `sqlite:///data/ledger.db`) and Postgres in Docker. No other module writes `audit_log` or `anchors`.
+
+**Q4 — `cross_institution` module.** `packages/docverf/reasoning/cross_institution.py` with `check_cross_institution(app_id: str, claims: list[Claim], hash_index: HashIndex) -> list[Finding]`. P1; stub for now.
+
+**Q5 — `anchor_root` return.** `anchor_root(seq: int, root_hash: str) -> str` returns the transaction hash (hex).
+
+**Q6 — Placement.** Accepted as scaffolded: `verification.lookup` in `verification/__init__.py`, `build_claims` in `reasoning/entity_graph.py`, `aggregate` in `reasoning/run.py`.
+
+**Q7 — Signatures derived from prose.** Accepted. Module owners may refine signatures *inside their own module* as long as the public function returns the §5 schema type. Changes to anything another module calls go through the lead.
+
+**Q8 — Missing rule YAML.** `REQUIRED_DOCS` YAML added to §8.4. `TER_PAID`, `INTAKE_WITHIN_APPROVED`, `ACCREDITATION_COVERS_YEAR` and `LAND_MIN_AREA` are P1: the reasoning owner adds their YAML when implementing them. `LAND_MIN_AREA` (land area ≥ an illustrative minimum from config) exists only for the impact-simulator example.
+
+**Q9 — `app_clean` fixture.** Fixed in Appendix A: affidavit area confidence 0.92, agreement true; `app_clean` must yield zero findings. Dropping stale `raw` values is correct.
+
+**Q10 — Multipart upload shape.** `POST /v1/applications` multipart parts:
+- `form`: JSON string of the application_form fields,
+- `files`: repeated file parts,
+- `doc_types`: JSON array of DocType values, same length and order as `files`.
+
+**Q11 — Python version.** `requires-python = ">=3.11,<3.13"` accepted; the team develops on 3.11 via uv.
+
+---
+
 ## Appendix A — fixture: conflict application (`app_conflict`)
 
-Clean variant (`app_clean`): same values but deed `area` = 2.5, deed `owner_name` = trust name, NOC `issue_date` = 2025-11-10, NOC `valid_until` = 2028-12-31.
+Clean variant (`app_clean`): same values but deed `area` = 2.5, deed `owner_name` = trust name, NOC `issue_date` = 2025-11-10, NOC `valid_until` = 2028-12-31, affidavit `land_area_declared` confidence = 0.92 with `extractor_agreement: true`. Drop `raw` on any field whose value changed. `app_clean` must produce **zero** findings.
 
 ```json
 [

@@ -18,8 +18,8 @@
     "land_area_declared": {
       "value": 2.5,
       "unit": "acre",
-      "confidence": 0.62,
-      "extractor_agreement": false
+      "confidence": 0.92,
+      "extractor_agreement": true
     }
   }
 }

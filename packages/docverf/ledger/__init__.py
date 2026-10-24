@@ -1,5 +1,6 @@
 """Hash-chained audit log and blockchain anchoring (TRD §14). May make network calls.
 
-TODO(question): TRD §1 rule 5 says only services/ touch the database, but §14 says `append`
-inserts rows atomically. Where does the DB access live (a session passed in, or a service)?
+Per TRD §19 Q3, `ledger/` owns its storage (the `audit_log` and `anchors` tables) through
+`AuditLog(db_url=config.DATABASE_URL)`, SQLAlchemy on SQLite (local) or Postgres (Docker).
+The `AuditLog` class is not scaffolded yet; the module-level stubs in `audit_log.py` predate §19.
 """
