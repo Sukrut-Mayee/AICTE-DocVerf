@@ -49,7 +49,8 @@ python -m docverf.provenance  data/synthetic/app001/noc.pdf
 python -m docverf.extraction  data/synthetic/app001/
 python -m docverf.forensics   data/synthetic/app001/
 python -m docverf.reasoning   tests/fixtures/apps/app_conflict/     # runs on ExtractionResult JSON, no OCR
-python -m docverf.verification | ledger | synthetic  <path>
+python -m docverf.verification | ledger  <path>
+python -m docverf.synthetic --out data/synthetic --n 20      # needs Chrome or Edge for the PDFs
 python -m eval data/synthetic
 ```
 

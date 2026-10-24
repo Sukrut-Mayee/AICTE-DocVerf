@@ -1,6 +1,7 @@
 """Extractor 1: regex/keyword rules over OCR text, per doc type (TRD §10).
 
-Keyword/regex extraction over OCR word boxes for land_deed, noc, and affidavit.
+Keyword/regex extraction over OCR word boxes for land_deed, noc, affidavit and
+accreditation_cert.
 Missing or ambiguous fields are omitted rather than guessed. Confidence is
 the OCR confidence times the format factor. The agreement factor is applied once, by the
 merge in ``extract._merge_fields``, after the VLM extractor has been compared.
@@ -17,8 +18,9 @@ from docverf.extraction.normalize import (
 )
 from docverf.schemas import DocType, FieldValue
 
-# Vertical tolerance (normalized 0..1) for grouping words into a text line.
-_LINE_Y_TOLERANCE = 0.025
+# Smallest vertical tolerance (normalized 0..1) for grouping words into a text line; the real
+# tolerance is half the median word height (see _group_lines).
+_MIN_LINE_TOLERANCE = 0.004
 
 # Survey number like "45/2" or "45/2A".
 _SURVEY_RE = re.compile(r"\d+\s*/\s*\d+[A-Za-z]?")
@@ -26,46 +28,69 @@ _SURVEY_RE = re.compile(r"\d+\s*/\s*\d+[A-Za-z]?")
 _REF_NO_RE = re.compile(r"[A-Za-z]{2,}/[A-Za-z]{2}/\d{4}/\d+")
 
 # Each spec: (field_name, [label keywords], extraction kind).
-# Kind: text | date | area | survey_no | ref_no | mortgage
+# Kind: text | date | area | survey_no | ref_no | mortgage | list
+# The first label of each field is the exact English label printed by the synthetic templates
+# (synthetic/templates/*.html.j2); a line is matched by the first label found in it, so the exact
+# label wins on its own line. The looser keywords after it are for other documents.
 _LABEL_SPECS: dict[DocType, list[tuple[str, list[str], str]]] = {
     DocType.LAND_DEED: [
-        ("owner_name", ["owner", "मालक", "स्वामी"], "text"),
+        ("owner_name", ["owner name", "owner", "मालक", "स्वामी"], "text"),
         (
             "survey_no",
-            ["survey no", "survey", "सर्वे नंबर", "गट नंबर", "गट"],
+            ["survey/gat no", "survey no", "survey", "सर्वे नंबर", "गट नंबर", "गट"],
             "survey_no",
         ),
-        ("area", ["area", "क्षेत्रफळ"], "area"),
+        ("area", ["land area", "area", "क्षेत्रफळ"], "area"),
         ("village", ["village", "गाव"], "text"),
         ("district", ["district", "जिल्हा"], "text"),
         (
             "registration_no",
-            ["registration no", "registration", "नोंदणी क्रमांक"],
+            ["deed registration no", "registration no", "registration", "नोंदणी क्रमांक"],
             "text",
         ),
         ("registration_date", ["registration date", "date", "तारीख"], "date"),
-        ("mortgage_status", ["mortgage", "बंधक"], "mortgage"),
+        ("mortgage_status", ["mortgage status", "mortgage", "बंधक"], "mortgage"),
     ],
     DocType.NOC: [
-        ("issuer", ["issuer", "जारी करणारा"], "text"),
-        ("ref_no", ["ref no", "reference no", "संदर्भ क्रमांक"], "ref_no"),
-        ("institute_name", ["institute", "महाविद्यालय"], "text"),
-        ("purpose", ["purpose", "उद्देश"], "text"),
+        ("issuer", ["issuing authority", "issuer", "जारी करणारा"], "text"),
+        (
+            "ref_no",
+            ["noc reference no", "ref no", "reference no", "संदर्भ क्रमांक"],
+            "ref_no",
+        ),
+        ("institute_name", ["institute name", "institute", "महाविद्यालय"], "text"),
+        ("purpose", ["purpose of noc", "purpose", "उद्देश"], "text"),
         ("issue_date", ["issue date"], "date"),
         ("valid_until", ["valid until", "valid upto", "वैधता"], "date"),
-        ("signatory", ["signatory", "स्वाक्षरीकर्ता"], "text"),
+        ("signatory", ["signatory name", "signatory", "स्वाक्षरीकर्ता"], "text"),
     ],
     DocType.AFFIDAVIT: [
-        ("deponent_name", ["deponent", "प्रतिज्ञाकर्ता"], "text"),
-        ("institute_name", ["institute", "महाविद्यालय"], "text"),
+        ("deponent_name", ["deponent name", "deponent", "प्रतिज्ञाकर्ता"], "text"),
+        ("institute_name", ["institute name", "institute", "महाविद्यालय"], "text"),
         (
             "application_no",
             ["application no", "application", "अर्ज क्रमांक"],
             "text",
         ),
-        ("date", ["date", "तारीख"], "date"),
-        ("land_area_declared", ["land area", "घोषित क्षेत्रफळ"], "area"),
-        ("notary_reg_no", ["notary reg no", "notary", "नोटरी क्रमांक"], "text"),
+        ("date", ["date of affidavit", "date", "तारीख"], "date"),
+        (
+            "land_area_declared",
+            ["declared land area", "land area", "घोषित क्षेत्रफळ"],
+            "area",
+        ),
+        (
+            "notary_reg_no",
+            ["notary reg. no", "notary reg no", "notary", "नोटरी क्रमांक"],
+            "text",
+        ),
+    ],
+    DocType.ACCREDITATION_CERT: [
+        ("cert_no", ["certificate no"], "text"),
+        ("body", ["accrediting body"], "text"),
+        ("institute_name", ["institute name"], "text"),
+        ("programs", ["accredited programmes"], "list"),
+        ("valid_from", ["valid from"], "date"),
+        ("valid_to", ["valid to"], "date"),
     ],
 }
 
@@ -80,20 +105,30 @@ def _ascii(text: str) -> str:
 def _group_lines(
     ocr_words: list[dict[str, Any]],
 ) -> list[list[dict[str, Any]]]:
+    """Group words into text lines, each sorted left to right.
+
+    Two words share a line when their vertical centres differ by less than half a typical (median)
+    word height, so neighbouring rows of an ordinary A4 page stay separate lines."""
     if not ocr_words:
         return []
-    ordered = sorted(ocr_words, key=lambda w: (float(w["bbox"][1]), float(w["bbox"][0])))
+
+    def centre(w: dict[str, Any]) -> float:
+        return (float(w["bbox"][1]) + float(w["bbox"][3])) / 2
+
+    heights = sorted(float(w["bbox"][3]) - float(w["bbox"][1]) for w in ocr_words)
+    tolerance = max(heights[len(heights) // 2] / 2, _MIN_LINE_TOLERANCE)
+    ordered = sorted(ocr_words, key=lambda w: (centre(w), float(w["bbox"][0])))
     lines: list[list[dict[str, Any]]] = [[ordered[0]]]
-    cur_y = float(ordered[0]["bbox"][1])
+    cur_y = centre(ordered[0])
     for w in ordered[1:]:
-        y = float(w["bbox"][1])
-        if abs(y - cur_y) > _LINE_Y_TOLERANCE:
+        y = centre(w)
+        if abs(y - cur_y) > tolerance:
             lines.append([w])
             cur_y = y
         else:
             lines[-1].append(w)
             cur_y = (cur_y + y) / 2
-    return lines
+    return [sorted(line, key=lambda w: float(w["bbox"][0])) for line in lines]
 
 
 def _line_text(line: list[dict[str, Any]]) -> str:
@@ -226,6 +261,11 @@ def rules_extract(ocr_words: list[dict[str, Any]], doc_type: DocType) -> dict[st
                     value = m.group(0)
                     format_valid = True
                     raw = value
+            elif kind == "list":  # "A; B" or "A, B"
+                items = [t.strip() for t in re.split(r"[;,]", after_text) if t.strip()]
+                if items:
+                    value = items
+                    format_valid = True
             elif kind == "mortgage":
                 val = _extract_mortgage(after_text)
                 if val:

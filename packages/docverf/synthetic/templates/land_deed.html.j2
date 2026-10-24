@@ -1,0 +1,29 @@
+{% extends "base.html.j2" %}
+{% from "macros.html.j2" import row %}
+{% set title = "LAND DEED" %}
+{% set local_title = local.title %}
+{% set kind = "LEGAL RECORD" %}
+{% block content %}
+    <h3>Land Particulars / {{ local.property }}</h3>
+    {{ row(local.village, "Village:", deed.village) }}
+    {{ row(local.taluka, "Taluka:", deed.taluka) }}
+    {{ row(local.district, "District:", deed.district) }}
+    {{ row(local.survey_no, "Survey/Gat No.:", deed.survey_no) }}
+    {{ row(local.area, "Land Area:", deed.area) }}
+    {{ row(local.mortgage_status, "Mortgage Status:", deed.mortgage_status) }}
+
+    <h3>Parties / {{ local.parties }}</h3>
+    {{ row(local.owner_name, "Owner Name:", deed.owner_name) }}
+
+    <h3>Deed Particulars / {{ local.deed }}</h3>
+    {{ row(local.registration_no, "Deed Registration No.:", deed.registration_no) }}
+    {{ row(local.registration_date, "Registration Date:", deed.registration_date) }}
+    {{ row(local.office, "Registering Office:", "Sub-Registrar Office, " ~ deed.district) }}
+{% endblock %}
+{% block signatures %}
+        <div class="signature-section">
+            <div class="signature-box"><div class="signature-line">Seller / Transferor</div></div>
+            <div class="signature-box"><div class="signature-line">Purchaser / Transferee</div></div>
+            <div class="signature-box"><div class="signature-line">Registering Officer</div></div>
+        </div>
+{% endblock %}

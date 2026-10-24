@@ -1,0 +1,28 @@
+{% extends "base.html.j2" %}
+{% from "macros.html.j2" import row %}
+{% set title = "CERTIFICATE OF ACCREDITATION" %}
+{% set local_title = "" %}
+{% set kind = "ACCREDITATION CERTIFICATE" %}
+{% block content %}
+    <div class="declaration" style="text-align: center;">
+        <p>This is to certify that the programmes of</p>
+        <h2 style="font-size: 16pt; margin: 8px 0;">{{ cert.institute_name }}</h2>
+        <p>have been evaluated in a synthetic test environment.</p>
+    </div>
+
+    <h3>Certificate Particulars</h3>
+    {{ row("", "Certificate No.:", cert.cert_no) }}
+    {{ row("", "Accrediting Body:", cert.body) }}
+    {{ row("", "Institute Name:", cert.institute_name) }}
+    {{ row("", "Accredited Programmes:", cert.programs) }}
+    {{ row("", "Valid From:", cert.valid_from) }}
+    {{ row("", "Valid To:", cert.valid_to) }}
+{% endblock %}
+{% block signatures %}
+        <div class="signature-section">
+            <div class="seal-box"><div>SYNTHETIC SEAL<br>NOT VALID</div></div>
+            <div class="signature-box">
+                <div class="signature-line">Authorised Signatory<br>{{ cert.body }}</div>
+            </div>
+        </div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html.j2" %}
+{% from "macros.html.j2" import row %}
+{% set title = "AFFIDAVIT" %}
+{% set local_title = "शपथपत्र" %}
+{% set kind = "LEGAL RECORD" %}
+{% block content %}
+    <h3>Declarant / शपथकर्ता</h3>
+    {{ row("शपथकर्त्याचे नाव", "Deponent Name:", aff.deponent_name) }}
+    {{ row("संस्थेचे नाव", "Institute Name:", aff.institute_name) }}
+    {{ row("अर्ज क्रमांक", "Application No.:", aff.application_no) }}
+
+    <h3>Declaration / घोषणा</h3>
+    {{ row("शपथपत्र दिनांक", "Date of Affidavit:", aff.date) }}
+    {{ row("घोषित क्षेत्रफळ", "Declared Land Area:", aff.area) }}
+    {{ row("नोटरी नोंदणी क्र.", "Notary Reg. No.:", aff.notary_reg_no) }}
+
+    <div class="declaration">
+        I, <strong>{{ aff.deponent_name }}</strong>, on behalf of <strong>{{ aff.institute_name }}</strong>,
+        solemnly affirm that the statements made in this synthetic affidavit are true. It is a fictional
+        document and is not binding.
+    </div>
+{% endblock %}
+{% block signatures %}
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-line">{{ aff.deponent_name }}<br>Signature of Declarant</div>
+            </div>
+            <div class="seal-box"><div>SYNTHETIC NOTARY<br>SEAL (NOT VALID)</div></div>
+        </div>
+{% endblock %}

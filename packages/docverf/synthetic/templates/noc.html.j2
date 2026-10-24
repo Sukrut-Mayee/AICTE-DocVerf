@@ -1,0 +1,33 @@
+{% extends "base.html.j2" %}
+{% from "macros.html.j2" import row %}
+{% set title = "FIRE NO OBJECTION CERTIFICATE (NOC)" %}
+{% set local_title = "अग्निशमन विभाग / FIRE DEPARTMENT" %}
+{% set kind = "FIRE NOC" %}
+{% block content %}
+    <h3>Certificate Particulars / प्रमाणपत्र तपशील</h3>
+    {{ row("एनओसी संदर्भ क्रमांक", "NOC Reference No.:", noc.ref_no) }}
+    {{ row("जारी करणारे प्राधिकरण", "Issuing Authority:", noc.issuer) }}
+    {{ row("जारी दिनांक", "Issue Date:", noc.issue_date) }}
+    {{ row("वैधता दिनांक", "Valid Until:", noc.valid_until) }}
+
+    <h3>Applicant / अर्जदार</h3>
+    {{ row("संस्थेचे नाव", "Institute Name:", noc.institute_name) }}
+    {{ row("एनओसीचा उद्देश", "Purpose of NOC:", noc.purpose) }}
+
+    <div class="declaration">
+        The premises of <strong>{{ noc.institute_name }}</strong> are declared, for synthetic testing
+        only, to meet the stated fire-safety requirements. This certificate has no legal or
+        official validity.
+    </div>
+
+    <h3>Officer / अधिकृत अधिकारी</h3>
+    {{ row("अधिकृत अधिकारीचे नाव", "Signatory Name:", noc.signatory) }}
+{% endblock %}
+{% block signatures %}
+        <div class="signature-section">
+            <div class="seal-box"><div>FICTIONAL SEAL<br>(SYNTHETIC)<br>NOT VALID</div></div>
+            <div class="signature-box">
+                <div class="signature-line">Authorised Officer<br>{{ noc.signatory }}<br>Assistant Fire Officer</div>
+            </div>
+        </div>
+{% endblock %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SYNTHETIC TEST DOCUMENT — {{ title }}</title>
+    <style>
+        @page { size: A4; margin: 15mm; }
+        body {
+            font-family: "Arial", "Noto Sans Devanagari", "Nirmala UI", "Mangal", sans-serif;
+            font-size: 10.5pt; line-height: 1.5; color: #000; margin: 0; padding: 0;
+        }
+        .watermark {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 175mm; z-index: -1000;
+        }
+        .header { text-align: center; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 12px; }
+        .local-heading { font-size: 15pt; font-weight: bold; margin: 4px 0; }
+        .english-heading { font-size: 13pt; font-weight: bold; margin: 4px 0; }
+        .synthetic-notice {
+            text-align: center; background-color: #ffe6e6; border: 2px solid #ff0000;
+            padding: 6px; margin: 10px 0; font-weight: bold; font-size: 9.5pt;
+        }
+        h3 { font-size: 11.5pt; margin: 12px 0 4px 0; }
+        .field-row { display: flex; margin: 5px 0; align-items: baseline; }
+        .label { font-weight: bold; flex: none; min-width: 235px; white-space: nowrap; }
+        .label-local { font-family: "Nirmala UI", "Noto Sans Devanagari", "Mangal", sans-serif; }
+        .value { flex: 1; border-bottom: 1px dotted #000; min-height: 18px; padding: 1px 5px; }
+        .declaration { margin: 8px 0; text-align: justify; }
+        .footer { margin-top: 22px; padding-top: 10px; border-top: 1px solid #000; }
+        .signature-section { display: flex; justify-content: space-between; margin-top: 30px; }
+        .signature-box { text-align: center; width: 230px; }
+        .signature-line { border-top: 1px solid #000; margin-top: 46px; padding-top: 4px; }
+        .seal-box {
+            width: 120px; height: 90px; border: 2px dashed #666; border-radius: 50%;
+            text-align: center; font-size: 8pt; display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <img class="watermark" src="{{ watermark }}" alt="">
+    <div class="header">
+        {% if local_title %}<div class="local-heading">{{ local_title }}</div>{% endif %}
+        <div class="english-heading">{{ title }}</div>
+    </div>
+    <div class="synthetic-notice">
+        SYNTHETIC TEST DOCUMENT — NOT A REAL {{ kind }}<br>
+        Generated for testing and evaluation only.
+    </div>
+{% block content %}{% endblock %}
+    <div class="footer">
+        <p style="font-size: 9pt; text-align: center; margin: 0;">
+            This is a synthetic document generated for AICTE DocVerf testing.
+        </p>
+{% block signatures %}{% endblock %}
+    </div>
+</body>
+</html>
