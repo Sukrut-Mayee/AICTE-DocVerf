@@ -184,14 +184,13 @@ def extract(
 ) -> ExtractionResult:
     """Quality gate -> classify (if doc_type is None) -> regions -> OCR -> two extractors ->
     confidence -> normalize (TRD §10)."""
+    path = Path(file_path)
+    if not path.is_file():
+        raise FileNotFoundError(path)
+
     settings = get_settings()
     warnings: list[str] = []
     engines: dict[str, str] = {}
-
-    # --- Resolve input path ---
-    path = Path(file_path)
-    if not path.exists():
-        raise FileNotFoundError(f"File not found: {path}")
 
     # --- Render pages to images ---
     is_pdf = path.suffix.lower() == ".pdf"

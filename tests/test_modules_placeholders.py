@@ -154,13 +154,6 @@ def test_synthetic(tmp_path):
         assert {"app_id", "documents", "true_fields", "injected_defects"} <= set(gt)
 
 
-def test_eval():
-    from eval.metrics import evaluate
-
-    with pytest.raises(NotImplementedError):
-        evaluate(PP, PP)
-
-
 @pytest.mark.parametrize(
     "module",
     ["provenance", "forensics", "verification", "ledger"],
