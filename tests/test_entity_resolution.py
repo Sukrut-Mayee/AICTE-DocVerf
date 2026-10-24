@@ -1,14 +1,8 @@
 """Checkpoint 2: name normalisation, fuzzy matching and area units (TRD §8.1, §8.2)."""
 
 import pytest
-from docverf.reasoning.entity_resolution import (
-    ACRES_PER_UNIT,
-    acres_per_unit,
-    names_match,
-    normalize_id,
-    normalize_name,
-    to_acres,
-)
+from docverf.reasoning.entity_resolution import names_match, normalize_id, normalize_name
+from docverf.units import ACRES_PER_UNIT, acres_per_unit, to_acres
 
 
 def test_normalize_expands_abbreviations_and_strips_punctuation():

@@ -2,8 +2,8 @@
 
 Keyword/regex extraction over OCR word boxes for land_deed, noc, and affidavit.
 Missing or ambiguous fields are omitted rather than guessed. Confidence is
-computed via ``field_confidence`` with ``extractors_agree=None`` (rules is
-extractor 1; agreement is decided later against the VLM extractor).
+the OCR confidence times the format factor. The agreement factor is applied once, by the
+merge in ``extract._merge_fields``, after the VLM extractor has been compared.
 """
 
 import re
@@ -160,7 +160,8 @@ def _build_field(
     if value is None:
         return None
     page = int(value_words[0].get("page", 1)) if value_words else None
-    confidence = field_confidence(_avg_conf(value_words), None, format_valid)
+    # extractors_agree=True is the neutral 1.0 factor: agreement is applied later, in the merge.
+    confidence = field_confidence(_avg_conf(value_words), True, format_valid)
     return FieldValue(
         value=value,
         unit=unit,

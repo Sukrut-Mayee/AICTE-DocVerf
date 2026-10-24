@@ -9,6 +9,8 @@ not be silently imported.
 import re
 from datetime import datetime
 
+from docverf.units import canonical_unit
+
 # Devanagari digits U+0966..U+096F (०..९) mapped to ASCII 0..9.
 _DEVANAGARI_DIGITS = "०१२३४५६७८९"
 _DIGIT_MAP = str.maketrans(_DEVANAGARI_DIGITS, "0123456789")
@@ -27,9 +29,9 @@ _DATE_FORMATS = (
     "%b %d, %Y",
 )
 
-# Unit token: starts with a letter, contains only letters (incl. Devanagari)
-# and internal spaces; no digits.
-_UNIT_RE = re.compile(r"^[A-Za-z\u0900-\u097F][A-Za-z\u0900-\u097F\s]*$")
+# Unit token: starts with a letter, contains only letters (incl. Devanagari),
+# spaces and dots ("sq. m."); no digits.
+_UNIT_RE = re.compile(r"^[A-Za-z\u0900-\u097F][A-Za-z\u0900-\u097F\s.]*$")
 _AREA_RE = re.compile(r"^([0-9]+(?:\.[0-9]+)?)\s+(.+)\s*$")
 
 
@@ -64,8 +66,10 @@ def normalize_date(raw: str) -> str | None:
 
 
 def normalize_area(raw: str) -> tuple[float, str] | None:
-    """Return ``(value, unit)`` as written; no conversion to acres.
+    """Return ``(value, unit)``; no conversion to acres.
 
+    The unit is the canonical one when we know the spelling ("acres", "एकर" -> "acre") and is
+    otherwise kept as written ("bigha"), so reasoning can name an unknown unit.
     The numeric part and a single alphabetic unit token are required. Returns
     ``None`` when the area or unit cannot be parsed reliably. Devanagari digits
     in the numeric part are converted to ASCII first.
@@ -80,4 +84,4 @@ def normalize_area(raw: str) -> tuple[float, str] | None:
     unit = m.group(2).strip()
     if not unit or not _UNIT_RE.match(unit):
         return None
-    return (value, unit)
+    return (value, canonical_unit(unit) or unit)

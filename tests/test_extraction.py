@@ -78,8 +78,8 @@ def test_normalize_area_valid():
 
 
 def test_normalize_area_devanagari_digits_and_unit():
-    # Devanagari digits converted to ASCII; Marathi unit preserved as written.
-    assert normalize_area("२.१० एकर") == (2.10, "एकर")
+    # Devanagari digits converted to ASCII; the Marathi unit becomes the canonical one.
+    assert normalize_area("२.१० एकर") == (2.10, "acre")
 
 
 def test_normalize_area_missing_unit_returns_none():
@@ -380,7 +380,7 @@ def test_rules_extract_land_deed():
     assert result["owner_name"].raw == "श्री विद्या चॅरिटेबल सोसायटी"
     assert result["survey_no"].value == "45/2"
     assert result["area"].value == 2.10
-    assert result["area"].unit == "एकर"
+    assert result["area"].unit == "acre"  # canonical, whatever the document prints
     assert result["registration_date"].value == "2010-02-03"
     assert result["mortgage_status"].value == "none"
     # confidence/bbox/page propagated
@@ -407,7 +407,8 @@ def test_rules_extract_noc():
     assert result["issue_date"].value == "2008-06-10"
     assert result["valid_until"].value == "2027-12-31"
     assert result["signatory"].value == "John Doe"
-    assert result["ref_no"].confidence == pytest.approx(0.9 * 0.6 * 1.0)
+    # OCR confidence x format factor; the agreement factor is applied once, in the merge.
+    assert result["ref_no"].confidence == pytest.approx(0.9)
 
 
 def test_rules_extract_affidavit():
@@ -475,7 +476,7 @@ def test_rules_extract_confidence_bbox_propagation():
     fv = result["survey_no"]
     assert fv.bbox == pytest.approx([0.42, 0.36, 0.57, 0.41])
     assert fv.page == 1
-    assert fv.confidence == pytest.approx(0.9 * 0.6 * 1.0)
+    assert fv.confidence == pytest.approx(0.9)  # OCR confidence; agreement comes from the merge
     assert fv.extractor_agreement is None
 
 
@@ -1179,3 +1180,88 @@ def test_cli_no_supported_files(tmp_path):
     )
     assert run.returncode != 0
     assert "no supported files" in run.stderr.lower()
+
+
+# ---- units: canonical, dotted, and compared in acres (agreement) ----
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("1.8 acres", (1.8, "acre")),
+        ("2 एकर", (2.0, "acre")),
+        ("0.85 ha", (0.85, "hectare")),
+        ("1 हेक्टर", (1.0, "hectare")),
+        ("10 sq. m.", (10.0, "sqm")),
+        ("10 Sq.M.", (10.0, "sqm")),
+        ("10 चौ.मी.", (10.0, "sqm")),
+        ("10 square metres", (10.0, "sqm")),
+        ("40 gunthas", (40.0, "guntha")),
+        ("2.5 acre.", (2.5, "acre")),  # trailing full stop
+        ("3 bigha", (3.0, "bigha")),  # unknown unit stays as written, so reasoning can name it
+    ],
+)
+def test_normalize_area_emits_the_canonical_unit(text, expected):
+    assert normalize_area(text) == expected
+
+
+def _ocr_line(texts, y=0.5, conf=0.95):
+    return [
+        {
+            "text": t,
+            "bbox": [0.1 + i * 0.1, y, 0.18 + i * 0.1, y + 0.02],
+            "confidence": conf,
+            "page": 1,
+        }
+        for i, t in enumerate(texts)
+    ]
+
+
+def _merged_area(ocr_text, vlm_answer, conf=0.95):
+    import json
+
+    from docverf.extraction.extract import _merge_fields
+    from docverf.extraction.vlm import _parse_response
+
+    rules = rules_extract(_ocr_line(["Area", ":", *ocr_text.split()], conf=conf), DocType.LAND_DEED)
+    vlm = _parse_response(json.dumps({"area": vlm_answer}), DocType.LAND_DEED)
+    return _merge_fields(rules, vlm)["area"]
+
+
+def test_ocr_and_vlm_unit_spellings_agree_and_the_field_is_readable():
+    """OCR '2.10 acre' + VLM '2.1 acres' used to count as a disagreement (confidence 0.228)."""
+    from docverf.config import get_settings
+
+    fv = _merged_area("2.10 acre", "2.1 acres")
+    assert fv.extractor_agreement is True
+    assert (fv.value, fv.unit) == (2.1, "acre")
+    assert fv.confidence == pytest.approx(0.95)  # ocr_conf x 1.0 x 1.0 (TRD §10)
+    assert fv.confidence >= get_settings().CONFIDENCE_THRESHOLD
+
+
+@pytest.mark.parametrize(
+    "ocr_text, vlm_answer, agree",
+    [
+        ("1 hectare", "2.47105 acre", True),  # different units, same area
+        ("2 एकर", "2.0 acres", True),
+        ("2.10 acre", "2.11 acre", True),  # 0.5% apart: inside the 1% tolerance
+        ("2.10 acre", "2.14 acre", False),  # 1.9% apart
+        ("2.10 acre", "2.5 acre", False),
+        ("1 hectare", "1 acre", False),
+        ("3 bigha", "3 bigha", True),  # unknown unit: literal comparison, as before
+        ("3 bigha", "4 bigha", False),
+    ],
+)
+def test_areas_are_compared_in_acres_with_one_percent_tolerance(ocr_text, vlm_answer, agree):
+    assert _merged_area(ocr_text, vlm_answer).extractor_agreement is agree
+
+
+def test_disagreeing_areas_keep_the_low_confidence():
+    assert _merged_area("2.10 acre", "2.5 acre").confidence == pytest.approx(0.95 * 0.4)
+
+
+def test_ocr_only_field_gets_the_single_extractor_factor_once():
+    from docverf.extraction.extract import _merge_fields
+
+    rules = rules_extract(_ocr_line(["Area", ":", "2.10", "acre"]), DocType.LAND_DEED)
+    assert _merge_fields(rules, {})["area"].confidence == pytest.approx(0.95 * 0.6)

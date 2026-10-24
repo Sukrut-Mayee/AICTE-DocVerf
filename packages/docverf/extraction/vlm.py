@@ -215,11 +215,11 @@ def _is_null_word(name: str, text: str) -> bool:
 
 
 def _parse_area(value: Any) -> tuple[float, str | None] | None:
-    """Split an area answer into (number, unit as written), or None if it has no usable number.
+    """Split an area answer into (number, unit), or None if it has no usable number.
 
     "2.10 acre" -> (2.1, "acre"); a bare number keeps unit None (reasoning then reports the
-    missing unit instead of guessing one). The unit stays as printed: reasoning's
-    acres_per_unit already knows the spellings (acres, ha, एकर, ...)."""
+    missing unit instead of guessing one). normalize_area gives the canonical unit
+    ("acres", "एकर" -> "acre") or, for an unknown unit, the text as written."""
     number: float
     unit: str | None = None
     if isinstance(value, bool):
@@ -250,6 +250,8 @@ def _clean_value(name: str, value: Any) -> Any:
         return None
     if isinstance(value, str) and (not value.strip() or _is_null_word(name, value)):
         return None
+    if name == "mortgage_status" and isinstance(value, str):
+        return value.strip().lower()  # the rules compare against 'none' / 'mortgaged'
     if name == "equipment_count":
         if isinstance(value, bool):
             return None

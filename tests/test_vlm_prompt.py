@@ -309,12 +309,15 @@ AREA_FIELDS = [(DocType.LAND_DEED, "area"), (DocType.AFFIDAVIT, "land_area_decla
     "given, number, unit",
     [
         ("2.10 acre", 2.1, "acre"),
-        ("1.8 acres", 1.8, "acres"),
-        ("0.85 ha", 0.85, "ha"),
-        ("2 एकर", 2.0, "एकर"),
-        ("२.५ एकर", 2.5, "एकर"),  # Devanagari digits
+        ("1.8 acres", 1.8, "acre"),
+        ("0.85 ha", 0.85, "hectare"),
+        ("2 एकर", 2.0, "acre"),
+        ("२.५ एकर", 2.5, "acre"),  # Devanagari digits
         (2.5, 2.5, None),  # a bare number: no unit is guessed
         ("2.5", 2.5, None),
+        ("10 sq. m.", 10.0, "sqm"),  # dotted units parse
+        ("10 चौ.मी.", 10.0, "sqm"),
+        ("3 bigha", 3.0, "bigha"),  # unknown unit stays as written
     ],
 )
 def test_area_is_split_into_value_and_unit(
@@ -343,7 +346,7 @@ def test_area_without_a_usable_number_is_dropped(monkeypatch, tmp_path, doc_type
      ("40 guntha", 1.0)],
 )  # fmt: skip
 def test_vlm_area_reaches_reasoning_with_its_unit(monkeypatch, tmp_path, given, acres):
-    """The unit text goes through reasoning's own normalisation (acres_per_unit)."""
+    """The unit is canonical, so reasoning converts it with the shared docverf.units table."""
     fake_ollama(monkeypatch, {"owner_name": "Shree Vidya Education Trust", "area": given})
     fields = vlm_extract(image(tmp_path), DocType.LAND_DEED)
     deed = ExtractionResult(
@@ -402,3 +405,37 @@ def test_null_words_inside_programs_are_dropped(monkeypatch, tmp_path):
     assert result["programs"].value == ["BE Computer"]
     fake_ollama(monkeypatch, {"body": "NBA", "programs": ["none"]})
     assert "programs" not in vlm_extract(image(tmp_path), DocType.ACCREDITATION_CERT)
+
+
+# ---- mortgage_status: trimmed and lowercased ----
+
+
+@pytest.mark.parametrize(
+    "given, kept",
+    [("none", "none"), ("None", "none"), (" NONE ", "none"), ("Mortgaged", "mortgaged"),
+     (" mortgaged\n", "mortgaged")],
+)  # fmt: skip
+def test_mortgage_status_is_trimmed_and_lowercased(monkeypatch, tmp_path, given, kept):
+    fake_ollama(monkeypatch, {"mortgage_status": given})
+    assert vlm_extract(image(tmp_path), DocType.LAND_DEED)["mortgage_status"].value == kept
+
+
+def test_other_text_fields_keep_their_case(monkeypatch, tmp_path):
+    fake_ollama(monkeypatch, {"owner_name": "Shree Vidya Education Trust", "village": " Pune "})
+    result = vlm_extract(image(tmp_path), DocType.LAND_DEED)
+    assert result["owner_name"].value == "Shree Vidya Education Trust"
+    assert result["village"].value == " Pune "  # copied exactly as printed
+
+
+def test_vlm_none_reaches_the_mortgage_rule_as_a_pass(monkeypatch, tmp_path):
+    from docverf.reasoning.rule_engine import load_checklist, run_rules
+
+    fake_ollama(monkeypatch, {"mortgage_status": "None"})
+    fields = vlm_extract(image(tmp_path), DocType.LAND_DEED)
+    for f in fields.values():
+        f.confidence = 0.9  # as after a two-extractor merge
+    deed = ExtractionResult(
+        doc_id="appx_land_deed", app_id="appx", doc_type=DocType.LAND_DEED, fields=fields
+    )
+    findings = run_rules("appx", [deed], load_checklist("eoa"))
+    assert [f.rule_id for f in findings if f.rule_id == "LAND_NOT_MORTGAGED"] == []
