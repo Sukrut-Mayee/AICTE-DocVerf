@@ -50,7 +50,7 @@ export interface UploadedFilesState {
 }
 
 export interface SubmissionSummary {
-  form: Record<string, any>;
+  form: Record<string, unknown>;
   filesCount: number;
   doc_types: string[];
   fileManifest: { index: number; name: string; sizeBytes: number; docType: string }[];

@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { DigitalTwin } from "../../../components/DigitalTwin";
+import { DigitalTwin } from "@/components/DigitalTwin";
 import { ArrowLeft, Building2 } from "lucide-react";
 
 export const metadata = {
@@ -10,8 +10,8 @@ export const metadata = {
 
 export default function DigitalTwinPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40">
+    <div className="bg-slate-950 text-slate-100 flex flex-col font-sans">
+      <header className="border-b border-slate-800 bg-slate-900/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Link
@@ -50,9 +50,9 @@ export default function DigitalTwinPage() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 p-4 sm:p-6 lg:p-8">
         <DigitalTwin />
-      </main>
+      </div>
 
       <footer className="border-t border-slate-900 bg-slate-950 py-4 px-4 text-center text-xs text-slate-500">
         AICTE DocVerf Digital Twin Component • FR-22 Infrastructure Verification • Submitted photos are supporting evidence only.
