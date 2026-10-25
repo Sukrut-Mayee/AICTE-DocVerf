@@ -1,0 +1,13 @@
+{
+  "ca_common_name": "Mock Fire Dept CA",
+  "ca_organization": "Maharashtra Fire Services",
+  "signer_common_name": "Mock Fire Dept Signer",
+  "signer_organization": "Maharashtra Fire Services",
+  "validity_days": 365,
+  "key_size": 2048,
+  "trust_roots_dir": "infra/pki/trust_roots",
+  "ca_cert_filename": "mock_fire_ca.pem",
+  "ca_key_filename": "ca.key",
+  "signer_cert_filename": "signer.pem",
+  "signer_key_filename": "signer.key"
+}
