@@ -1,4 +1,5 @@
 # OCR_ENGINE=paddleocr. Install in its own environment: Paddle and torch ship conflicting CUDA libs.
 -r base.txt
-paddleocr
-paddlepaddle
+paddleocr==2.10.0   # extraction/ocr.py uses the 2.x API (show_log, ocr(..., cls=True)); 3.x removed it
+paddlepaddle==3.3.1
+setuptools          # paddlepaddle 3.3 imports it at runtime

@@ -54,6 +54,21 @@ python -m docverf.synthetic --out data/synthetic --n 20      # needs Chrome or E
 python -m eval data/synthetic
 ```
 
+## Running the live pipeline
+Every application end to end (provenance, extraction, forensics, issuer lookup, reasoning, audit log)
+into contract-B `data/out/pipeline/appNNN.json`, then the integration checker:
+```bash
+# mock issuer: the pipeline starts it itself if nothing answers on MOCK_ISSUER_URL; to run it by hand:
+python -m uvicorn services.mock_issuer.main:app --port 8100
+# ledger: Postgres from Docker, or SQLite for local dev
+DATABASE_URL=sqlite:///data/ledger.db python -m services.worker.pipeline data/synthetic --out data/out/pipeline
+python -m services.worker.pipeline data/synthetic --apps app009,app017   # a subset
+python -m scripts.check_integration
+```
+Scanned pages need an OCR engine (`requirements/extraction-paddle.txt`); digital PDFs use their text layer.
+Without the VLM model in Ollama the pipeline runs on the rules extractor alone and says so in `meta.vlm`.
+Anchoring needs `ANCHOR_CONTRACT_ADDRESS` and a reachable node; otherwise `audit.tx` is `null`.
+
 ## Starting work on your module (TRD §18)
 1. Read `docs/TRD.md` §1 and §5, plus the section for your module (e.g. §10 extraction, §8 reasoning).
 2. Work only in your module and its test (`tests/test_<module>.py`). Replace the placeholder test and the
