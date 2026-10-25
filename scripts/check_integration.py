@@ -12,6 +12,12 @@ Exit code 1 if any pipeline file fails the contract.
 If the pipeline folder does not exist yet, a TEMPORARY oracle pipeline is built in a temp folder
 (run_reasoning + aggregate on the ground-truth fields, no provenance/forensic/issuer checks) and
 checked instead. It is never written to data/out/pipeline.
+
+    python -m scripts.check_integration --emit data/out/pipeline [--force]
+
+writes that same fallback pipeline to DIR for a demo before the real pipeline exists
+(meta.source = "ground_truth_fallback"), then checks it. Files that are not fallback output are
+never overwritten unless --force is given.
 """
 
 from __future__ import annotations
@@ -38,7 +44,15 @@ from services.api.pipeline import (  # noqa: E402
     is_valid_app_id,
 )
 
-ORACLE_LABEL = "oracle: ground-truth fields through run_reasoning + aggregate, no checks"
+FALLBACK_SOURCE = "ground_truth_fallback"
+FALLBACK_NOTE = (
+    "Not live pipeline output: synthetic ground-truth fields through run_reasoning + aggregate "
+    "(perfect extraction; no provenance, forensic or issuer checks)."
+)
+
+
+class FallbackRefused(Exception):
+    """Writing the fallback would replace pipeline output that is not itself a fallback."""
 
 
 @dataclass
@@ -105,12 +119,35 @@ def check(pipeline_dir: Path, synthetic_dir: Path) -> list[Row]:
     return [check_app(pipeline_dir, synthetic_dir, app_id) for app_id in sorted(app_ids)]
 
 
-def build_oracle_pipeline(synthetic_dir: Path, out_dir: Path) -> Path:
-    """Contract-B files from the ground truth alone (perfect extraction, no checks). For testing
-    the checker before the real pipeline exists; `out_dir` must not be data/out/pipeline."""
+def _not_fallback(path: Path) -> bool:
+    """True if `path` exists and is not fallback output (unreadable files count as real)."""
+    if not path.exists():
+        return False
+    try:
+        return json.loads(path.read_text("utf-8"))["meta"]["source"] != FALLBACK_SOURCE
+    except (OSError, ValueError, KeyError, TypeError):
+        return True
+
+
+def build_fallback_pipeline(
+    synthetic_dir: Path, out_dir: Path, force: bool = False, temporary: bool = False
+) -> Path:
+    """Contract-B files from the ground truth alone: every document's true fields as perfect
+    extractions, findings from run_reasoning, document statuses and priority from aggregate,
+    no checks, no audit. Refuses (before writing anything) to replace files that are not
+    fallback output, unless `force`."""
+    truths = [
+        GroundTruth.model_validate_json(p.read_text("utf-8"))
+        for p in sorted(synthetic_dir.glob("app*/ground_truth.json"))
+    ]
+    real = [
+        out_dir / f"{t.app_id}.json" for t in truths if _not_fallback(out_dir / f"{t.app_id}.json")
+    ]
+    if real and not force:
+        names = ", ".join(p.name for p in real)
+        raise FallbackRefused(f"{out_dir} already has non-fallback output ({names}); use --force")
     out_dir.mkdir(parents=True, exist_ok=True)
-    for truth_path in sorted(synthetic_dir.glob("app*/ground_truth.json")):
-        truth = GroundTruth.model_validate_json(truth_path.read_text("utf-8"))
+    for truth in truths:
         extractions = extractions_from_truth(truth)
         findings = run_reasoning(truth.app_id, extractions, [])
         documents, priority = aggregate(truth.app_id, findings, [], [e.doc_id for e in extractions])
@@ -121,8 +158,8 @@ def build_oracle_pipeline(synthetic_dir: Path, out_dir: Path) -> Path:
             "findings": [f.model_dump(mode="json") for f in findings],
             "documents": [d.model_dump(mode="json") for d in documents],
             "priority": priority,
-            "audit": None,
-            "meta": {"source": ORACLE_LABEL, "temporary": True},
+            "audit": None,  # PipelineRepository accepts no audit reference
+            "meta": {"source": FALLBACK_SOURCE, "note": FALLBACK_NOTE, "temporary": temporary},
         }
         (out_dir / f"{truth.app_id}.json").write_text(
             json.dumps(output, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -165,18 +202,31 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--pipeline", type=Path, default=Path("data/out/pipeline"))
     parser.add_argument("--synthetic", type=Path, default=Path("data/synthetic"))
+    parser.add_argument("--emit", type=Path, metavar="DIR", help="write the fallback pipeline here")
+    parser.add_argument(
+        "--force", action="store_true", help="with --emit: replace non-fallback files"
+    )
     args = parser.parse_args(argv)
 
     if not args.synthetic.is_dir():
         parser.error(f"synthetic data not found: {args.synthetic}")
+    if args.emit:
+        try:
+            build_fallback_pipeline(args.synthetic, args.emit, force=args.force)
+        except FallbackRefused as exc:
+            parser.error(str(exc))
+        print(
+            f"Wrote the ground-truth FALLBACK pipeline to {args.emit} (not live pipeline output)."
+        )
+        args.pipeline = args.emit
     if args.pipeline.is_dir():
         rows = check(args.pipeline, args.synthetic)
         print(f"Pipeline: {args.pipeline}\n")
     else:
         with tempfile.TemporaryDirectory(prefix="docverf-oracle-pipeline-") as tmp:
-            oracle = build_oracle_pipeline(args.synthetic, Path(tmp))
+            oracle = build_fallback_pipeline(args.synthetic, Path(tmp), temporary=True)
             print(f"{args.pipeline} does not exist.")
-            print(f"TEMPORARY ORACLE PIPELINE in {oracle} ({ORACLE_LABEL}); deleted afterwards.\n")
+            print(f"TEMPORARY ORACLE PIPELINE in {oracle}; deleted afterwards. {FALLBACK_NOTE}\n")
             rows = check(oracle, args.synthetic)
     print(table(rows))
     return 1 if any(r.valid is False for r in rows) else 0

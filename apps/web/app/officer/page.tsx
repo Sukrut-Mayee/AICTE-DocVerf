@@ -33,7 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ApiError, listApplications, type QueueItem } from "@/lib/api";
-import { formatDateTime } from "@/lib/format";
+import { FALLBACK_SOURCE, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function priorityClass(priority: number): string {
@@ -135,6 +135,7 @@ export default function OfficerQueuePage() {
   }, [queue]);
 
   const mockItems = (queue ?? []).filter((item) => item.meta?.source === "mock_fixture");
+  const fallbackItems = (queue ?? []).filter((item) => item.meta?.source === FALLBACK_SOURCE);
 
   return (
     <div className="space-y-6">
@@ -215,6 +216,20 @@ export default function OfficerQueuePage() {
                   tests/fixtures/apps/app_conflict
                 </code>
                 . Replacing it with real pipeline output needs no UI change.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {fallbackItems.length > 0 ? (
+            <Alert variant="info">
+              <ListChecks className="h-4 w-4" />
+              <AlertTitle>Not live pipeline output</AlertTitle>
+              <AlertDescription>
+                {fallbackItems.length === (queue ?? []).length
+                  ? "All applications"
+                  : fallbackItems.map((item) => item.app_id).join(", ")}{" "}
+                are built from the synthetic ground truth (perfect extraction, no provenance,
+                forensic or issuer checks). Real pipeline output replaces them with no UI change.
               </AlertDescription>
             </Alert>
           ) : null}

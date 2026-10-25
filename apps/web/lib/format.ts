@@ -114,3 +114,15 @@ export function formatValue(value: unknown): string {
 export function confidencePercent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
+
+/** Pipeline sources that are not live pipeline output, with the badge text the UI shows. */
+export const FALLBACK_SOURCE = "ground_truth_fallback";
+export const NON_LIVE_SOURCE_LABEL: Record<string, string> = {
+  mock_fixture: "Fixture data",
+  [FALLBACK_SOURCE]: "Ground-truth fallback",
+};
+
+export function nonLiveSourceLabel(meta: Record<string, unknown> | null | undefined): string | null {
+  const source = meta?.source;
+  return typeof source === "string" ? (NON_LIVE_SOURCE_LABEL[source] ?? null) : null;
+}
