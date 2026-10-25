@@ -11,7 +11,7 @@ import { DecisionBadge, StatusBadge } from "@/components/officer/badges";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ApplicationSummary } from "@/lib/api";
-import { formatDateTime } from "@/lib/format";
+import { FALLBACK_SOURCE, formatDateTime, nonLiveSourceLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function Metric({
@@ -37,7 +37,9 @@ function Metric({
 }
 
 export function SummaryBar({ summary }: { summary: ApplicationSummary }) {
+  const nonLive = nonLiveSourceLabel(summary.meta);
   const isMock = summary.meta?.source === "mock_fixture";
+  const isFallback = summary.meta?.source === FALLBACK_SOURCE;
   return (
     <Card className="overflow-hidden">
       <CardContent className="space-y-3 p-4 sm:p-5">
@@ -51,9 +53,9 @@ export function SummaryBar({ summary }: { summary: ApplicationSummary }) {
               {summary.decision ? (
                 <DecisionBadge decision={summary.decision.decision} />
               ) : null}
-              {isMock ? (
+              {nonLive ? (
                 <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
-                  Fixture data
+                  {nonLive}
                 </Badge>
               ) : null}
               {summary.decision_allowed ? (
@@ -156,6 +158,13 @@ export function SummaryBar({ summary }: { summary: ApplicationSummary }) {
             </code>
             . Officer actions and decisions are real SQLite records; the findings and audit
             reference were not produced by a live pipeline run.
+          </p>
+        ) : null}
+        {isFallback ? (
+          <p className="text-[11px] leading-relaxed text-sky-800">
+            Not live pipeline output: these findings come from the synthetic ground truth run
+            through the reasoning engine (perfect extraction, no provenance, forensic or issuer
+            checks). Officer actions and decisions are real SQLite records.
           </p>
         ) : null}
       </CardContent>

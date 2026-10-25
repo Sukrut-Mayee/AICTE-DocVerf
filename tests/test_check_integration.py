@@ -5,7 +5,7 @@ import json
 import pytest
 from docverf.synthetic.generate import generate_dataset
 
-from scripts.check_integration import build_oracle_pipeline, check, main, table
+from scripts.check_integration import build_fallback_pipeline, check, main, table
 
 REASONING = {  # defects reasoning finds from the fields alone (TRD §13.2)
     "AREA_MISMATCH", "OWNER_MISMATCH", "NAME_MISMATCH", "EXPIRED_NOC",
@@ -18,7 +18,7 @@ def dirs(tmp_path_factory):
     root = tmp_path_factory.mktemp("integration")
     synthetic = root / "synthetic"
     generate_dataset(synthetic, 20, render=False)
-    return synthetic, build_oracle_pipeline(synthetic, root / "pipeline")
+    return synthetic, build_fallback_pipeline(synthetic, root / "pipeline")
 
 
 def test_oracle_pipeline_passes_the_contract_and_catches_every_reasoning_defect(dirs):
@@ -37,7 +37,7 @@ def test_oracle_pipeline_passes_the_contract_and_catches_every_reasoning_defect(
 def test_oracle_files_are_labelled_temporary(dirs):
     _, pipeline = dirs
     data = json.loads((pipeline / "app009.json").read_text("utf-8"))
-    assert data["meta"]["temporary"] is True and "oracle" in data["meta"]["source"]
+    assert data["meta"]["source"] == "ground_truth_fallback" and "Not live" in data["meta"]["note"]
     assert {"app_id", "extractions", "checks", "findings", "documents", "priority"} <= set(data)
 
 
@@ -92,3 +92,56 @@ def test_cli_on_a_real_pipeline_folder(dirs, capsys):
     assert main(["--pipeline", str(pipeline), "--synthetic", str(synthetic)]) == 0
     out = capsys.readouterr().out
     assert "TEMPORARY" not in out and "0 failing the contract, 13/18 defects caught" in out
+
+
+# ---- --emit: the demo fallback pipeline ----
+
+
+def test_emit_writes_all_20_apps_with_every_document(dirs, tmp_path, capsys):
+    synthetic, _ = dirs
+    out = tmp_path / "pipeline"
+    assert main(["--synthetic", str(synthetic), "--emit", str(out)]) == 0
+    assert "FALLBACK" in capsys.readouterr().out
+    files = sorted(out.glob("app*.json"))
+    assert len(files) == 20
+    for path in files:
+        data = json.loads(path.read_text("utf-8"))
+        truth = json.loads((synthetic / path.stem / "ground_truth.json").read_text("utf-8"))
+        doc_ids = [d["doc_id"] for d in truth["documents"]]
+        assert data["meta"] == {
+            "source": "ground_truth_fallback",
+            "note": data["meta"]["note"],
+            "temporary": False,
+        }
+        assert [e["doc_id"] for e in data["extractions"]] == doc_ids
+        assert sorted(d["doc_id"] for d in data["documents"]) == sorted(doc_ids)  # ALL docs
+        assert data["checks"] == [] and data["audit"] is None
+    rows = check(out, synthetic)
+    assert all(r.valid for r in rows) and len(rows) == 20
+
+
+def test_emit_can_rerun_over_its_own_output(dirs, tmp_path):
+    synthetic, _ = dirs
+    out = tmp_path / "pipeline"
+    assert main(["--synthetic", str(synthetic), "--emit", str(out)]) == 0
+    assert main(["--synthetic", str(synthetic), "--emit", str(out)]) == 0
+
+
+def test_emit_refuses_to_overwrite_real_pipeline_output(dirs, tmp_path):
+    synthetic, _ = dirs
+    out = tmp_path / "pipeline"
+    out.mkdir()
+    real = out / "app005.json"
+    real.write_text(
+        json.dumps({"app_id": "app005", "meta": {"source": "pipeline"}}), encoding="utf-8"
+    )
+    broken = out / "app006.json"
+    broken.write_text("{not json", encoding="utf-8")
+    with pytest.raises(SystemExit) as exc:
+        main(["--synthetic", str(synthetic), "--emit", str(out)])
+    assert exc.value.code == 2
+    assert json.loads(real.read_text("utf-8"))["meta"]["source"] == "pipeline"  # untouched
+    assert broken.read_text("utf-8") == "{not json"
+    assert not (out / "app001.json").exists()  # refused before writing anything
+    assert main(["--synthetic", str(synthetic), "--emit", str(out), "--force"]) == 0
+    assert json.loads(real.read_text("utf-8"))["meta"]["source"] == "ground_truth_fallback"
