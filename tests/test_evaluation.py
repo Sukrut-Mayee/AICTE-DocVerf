@@ -2,6 +2,8 @@ import json
 import subprocess
 import sys
 
+import pytest
+
 from eval.metrics import evaluate
 
 
@@ -165,3 +167,41 @@ def test_eval_cli_reads_data_pipeline_outputs(tmp_path):
     assert "Defect recall: 1/1 (1.0)" in result.stdout
     assert (report_dir / "report.json").is_file()
     assert (report_dir / "report.md").is_file()
+
+
+def _issuer_timeout_report(tmp_path, documents, findings=()):
+    synthetic = tmp_path / "data" / "synthetic"
+    _write_app(
+        synthetic,
+        "app020",
+        [{"doc_id": "app020_noc", "defect": "ISSUER_TIMEOUT", "detail": "Synthetic"}],
+    )
+    pipeline = tmp_path / "data" / "out" / "pipeline"
+    pipeline.mkdir(parents=True)
+    (pipeline / "app020.json").write_text(
+        json.dumps({"findings": list(findings), "documents": documents}), encoding="utf-8"
+    )
+    return evaluate(synthetic, tmp_path / "eval")["defect_recall"]
+
+
+def _doc(doc_id, verification):
+    return {"doc_id": doc_id, "overall": "manual_review_required", "verification": verification}
+
+
+def test_issuer_timeout_is_caught_by_a_pending_noc_not_a_finding(tmp_path):
+    recall = _issuer_timeout_report(tmp_path, [_doc("app020_noc", "verification_pending")])
+    assert recall == {"detected": 1, "total": 1, "recall": 1.0}
+
+
+@pytest.mark.parametrize(
+    "documents",
+    [
+        [_doc("app020_noc", "verified")],
+        [_doc("app020_noc", None)],
+        [_doc("app020_land_deed", "verification_pending")],  # pending, but not the NOC
+        [],
+    ],
+    ids=["verified", "no-status", "wrong-document", "no-documents"],
+)
+def test_issuer_timeout_is_missed_without_a_pending_noc(tmp_path, documents):
+    assert _issuer_timeout_report(tmp_path, documents)["detected"] == 0

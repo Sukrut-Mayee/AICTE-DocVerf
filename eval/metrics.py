@@ -89,6 +89,26 @@ def _finding_matches(
     return finding_type in finding_types and right_document
 
 
+def defect_detected(
+    findings: list[dict[str, Any]], documents: Any, defect: str, app_id: str
+) -> bool:
+    """A finding matches the defect, or (ISSUER_TIMEOUT) the target document is still pending.
+
+    A pending issuer lookup is a document verification status, not a finding (TRD §13.2), so
+    `ISSUER_TIMEOUT` is caught when documents[] gives the NOC `verification_pending`."""
+    if any(_finding_matches(f, defect, app_id) for f in findings):
+        return True
+    if defect != "ISSUER_TIMEOUT" or not isinstance(documents, list):
+        return False
+    target = f"{app_id}_{_DEFECT_DOC_SUFFIX[defect]}"
+    return any(
+        isinstance(d, dict)
+        and d.get("doc_id") == target
+        and d.get("verification") == "verification_pending"
+        for d in documents
+    )
+
+
 def evaluate(synthetic_dir: Path, out_dir: Path) -> dict[str, Any]:
     """Measure injected-defect recall against per-application pipeline JSON."""
     synthetic_dir = Path(synthetic_dir)
@@ -126,10 +146,13 @@ def evaluate(synthetic_dir: Path, out_dir: Path) -> dict[str, Any]:
 
         pipeline_path = pipeline_dir / f"{app_id}.json"
         findings: list[dict[str, Any]] = []
+        documents: Any = []
         pipeline_error = None
         if pipeline_path.is_file():
             try:
-                findings = _findings_from_pipeline(_read_json(pipeline_path))
+                pipeline_data = _read_json(pipeline_path)
+                findings = _findings_from_pipeline(pipeline_data)
+                documents = pipeline_data.get("documents", [])
             except ValueError as exc:
                 pipeline_error = str(exc)
                 report["errors"].append(pipeline_error)
@@ -150,7 +173,7 @@ def evaluate(synthetic_dir: Path, out_dir: Path) -> dict[str, Any]:
                     {"app_id": app_id, "defect": code, "detail": injected_defect}
                 )
                 continue
-            detected = any(_finding_matches(item, code, app_id) for item in findings)
+            detected = defect_detected(findings, documents, code, app_id)
             per_defect[code]["total"] += 1
             report["defect_recall"]["total"] += 1
             app_total += 1

@@ -145,3 +145,18 @@ def test_emit_refuses_to_overwrite_real_pipeline_output(dirs, tmp_path):
     assert not (out / "app001.json").exists()  # refused before writing anything
     assert main(["--synthetic", str(synthetic), "--emit", str(out), "--force"]) == 0
     assert json.loads(real.read_text("utf-8"))["meta"]["source"] == "ground_truth_fallback"
+
+
+def test_a_pending_noc_counts_as_issuer_timeout_caught(dirs, tmp_path):
+    synthetic, pipeline = dirs
+    rows = check(pipeline, synthetic)
+    (before,) = [r for r in rows if "ISSUER_TIMEOUT" in r.expected]
+    timeout_app = before.app_id
+    data = json.loads((pipeline / f"{timeout_app}.json").read_text("utf-8"))
+    assert "ISSUER_TIMEOUT" in before.missed  # no issuer check in the fallback
+
+    noc = next(d for d in data["documents"] if d["doc_id"] == f"{timeout_app}_noc")
+    noc["verification"] = "verification_pending"
+    (tmp_path / f"{timeout_app}.json").write_text(json.dumps(data), encoding="utf-8")
+    (after,) = [r for r in check(tmp_path, synthetic) if r.app_id == timeout_app]
+    assert "ISSUER_TIMEOUT" in after.caught and "ISSUER_TIMEOUT" not in after.missed

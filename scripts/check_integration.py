@@ -36,7 +36,7 @@ from docverf.reasoning.run import aggregate, run_reasoning  # noqa: E402
 from docverf.schemas import GroundTruth  # noqa: E402
 from docverf.synthetic.model import extractions_from_truth  # noqa: E402
 
-from eval.metrics import _finding_matches  # noqa: E402
+from eval.metrics import _finding_matches, defect_detected  # noqa: E402
 from services.api.pipeline import (  # noqa: E402
     ApplicationNotFound,
     InvalidPipeline,
@@ -103,8 +103,9 @@ def check_app(pipeline_dir: Path, synthetic_dir: Path, app_id: str) -> Row:
     if truth is None:
         row.reason = "no ground_truth.json"
     findings = [f.model_dump(mode="json") for f in loaded.data.findings]
+    documents = [d.model_dump(mode="json") for d in loaded.data.documents]
     for code in expected:
-        hit = any(_finding_matches(f, code, app_id) for f in findings)
+        hit = defect_detected(findings, documents, code, app_id)
         (row.caught if hit else row.missed).append(code)
     for f in findings:
         if f["severity"] == "high" and not any(_finding_matches(f, c, app_id) for c in expected):
