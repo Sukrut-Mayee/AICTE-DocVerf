@@ -80,6 +80,16 @@ def document_index(settings: ApiSettings, app_id: str) -> dict[str, Path]:
             and current.suffix.lower() not in PREVIEWABLE_SUFFIXES
         ):
             index[doc_id] = path
+
+    # The synthetic manifest numbers photos only when an application has several: a lone
+    # lab_photo_1.jpg is the document `{app_id}_lab_photo`. Resolve it under both names.
+    numbered: dict[str, list[str]] = {}
+    for doc_id in index:
+        if match := re.fullmatch(r"(.+)_\d+", doc_id):
+            numbered.setdefault(match.group(1), []).append(doc_id)
+    for base, doc_ids in numbered.items():
+        if len(doc_ids) == 1 and base not in index:
+            index[base] = index[doc_ids[0]]
     return index
 
 

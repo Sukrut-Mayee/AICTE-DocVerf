@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from services.api.documents import document_index
 from services.api.main import create_app
 from services.api.pipeline import PipelineRepository
 from services.api.settings import ApiSettings
@@ -163,6 +164,27 @@ def test_documents_are_flagged_first_and_resolve_files(client: TestClient):
     assert form["filename"] == "application_form.json"
     assert form["previewable"] is False
     assert form["file_url"] == "/v1/files/app001/application_form.json"
+
+
+def test_a_lone_photo_resolves_under_both_document_ids(workspace: Path):
+    synthetic = workspace / "synthetic"
+    for app_id, photos in {
+        "app003": ["lab_photo_1.jpg"],
+        "app004": ["lab_photo_1.jpg", "lab_photo_2.jpg"],
+    }.items():
+        (synthetic / app_id).mkdir()
+        for name in photos:
+            (synthetic / app_id / name).write_bytes(b"\xff\xd8\xff")
+    settings = make_settings(workspace)
+
+    single = document_index(settings, "app003")
+    assert (
+        single["app003_lab_photo"]
+        == single["app003_lab_photo_1"]
+        == (synthetic / "app003" / "lab_photo_1.jpg")
+    )
+    several = document_index(settings, "app004")  # numbered ids stay, no ambiguous bare id
+    assert set(several) == {"app004_lab_photo_1", "app004_lab_photo_2"}
 
 
 def test_findings_preserve_evidence_and_action_state(client: TestClient):
