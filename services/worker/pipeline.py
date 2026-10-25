@@ -53,7 +53,7 @@ from docverf.forensics.noise import noise_inconsistency
 from docverf.ledger.anchor import anchor_root
 from docverf.ledger.audit_log import AuditLog
 from docverf.provenance.duplicates import HashIndex, check_duplicates
-from docverf.provenance.hashing import IMAGE_EXTENSIONS, hash_file
+from docverf.provenance.hashing import hash_file
 from docverf.provenance.metadata import extract_metadata
 from docverf.provenance.pdf_signature import check_pdf_signature
 from docverf.provenance.qr import decode_qr
@@ -74,11 +74,6 @@ logger = logging.getLogger("pipeline")
 
 RENDER_DPI = 150  # the synthetic scans are embedded at ~150 DPI; rendering higher only upscales
 ISSUER_START_WAIT_S = 20
-# TODO(question): TRD §9.1 asks for a pHash of page 1 of every PDF, but same-template PDFs are
-# within PHASH_MAX_DIST of each other across applications (171 of 190 deed / NOC / affidavit
-# pairs in data/synthetic), which would flag every application as a duplicate. Until Person C /
-# the TRD settle it, PDFs are compared by sha256 only and images by sha256 + pHash.
-PHASH_POLICY = "sha256 for every file; pHash for images only (TODO(question) in pipeline.py)"
 
 
 def _manifest(app_dir: Path) -> list[GroundTruthDoc]:
@@ -86,14 +81,8 @@ def _manifest(app_dir: Path) -> list[GroundTruthDoc]:
     return [GroundTruthDoc.model_validate(d) for d in raw["documents"]]
 
 
-def _comparable(path: Path, hashes: dict[str, str]) -> dict[str, str]:
-    """The hashes that take part in duplicate detection (see PHASH_POLICY)."""
-    keep = {"sha256", "phash"} if path.suffix.lower() in IMAGE_EXTENSIONS else {"sha256"}
-    return {k: v for k, v in hashes.items() if k in keep and v}
-
-
 def _add_to_index(index: HashIndex, app_id: str, doc_id: str, hashes: dict[str, str]) -> None:
-    for value in hashes.values():
+    for value in filter(None, hashes.values()):  # PDFs have no pHash: hash_file gives ""
         index.setdefault(value, []).append((app_id, doc_id))
 
 
@@ -205,7 +194,7 @@ class Run:
         app_dir = self.synthetic_dir / app_id
         for doc in _manifest(app_dir):
             path = app_dir / doc.path
-            _add_to_index(self.index, app_id, doc.doc_id, _comparable(path, hash_file(str(path))))
+            _add_to_index(self.index, app_id, doc.doc_id, hash_file(str(path)))
 
     def process(self, app_id: str) -> dict[str, float]:
         app_dir = self.synthetic_dir / app_id
@@ -227,7 +216,7 @@ class Run:
             with stage("provenance"):
                 for doc in docs:
                     path = app_dir / doc.path
-                    hashes = _comparable(path, hash_file(str(path)))
+                    hashes = hash_file(str(path))
                     checks += check_duplicates(app_id, doc.doc_id, hashes, self.index)
                     _add_to_index(self.index, app_id, doc.doc_id, hashes)
                     if doc.doc_type is DocType.APPLICATION_FORM:
@@ -290,7 +279,6 @@ class Run:
             "ocr_engine": get_settings().OCR_ENGINE,
             "vlm": self.vlm,
             "issuer": self.issuer,
-            "duplicates": PHASH_POLICY,
         }
         with stage("audit"):
             audit = self._audit(app_id, checks, findings, meta)
