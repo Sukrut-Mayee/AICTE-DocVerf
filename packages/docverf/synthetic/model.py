@@ -390,13 +390,12 @@ def ground_truth(app: AppSpec) -> GroundTruth:
     )
 
 
-def extraction_results(app: AppSpec, confidence: float = 1.0) -> list[ExtractionResult]:
-    """The true fields of every present document as perfect extractions (the reasoning oracle)."""
-    truth = true_fields(app)
+def extractions_from_truth(truth: GroundTruth, confidence: float = 1.0) -> list[ExtractionResult]:
+    """The true fields of every document as perfect extractions (the reasoning oracle)."""
     results = []
-    for doc_id, doc_type, _ in app.documents():
+    for doc in truth.documents:
         fields = {}
-        for name, value in truth[doc_id].items():
+        for name, value in truth.true_fields[doc.doc_id].items():
             if isinstance(value, dict) and set(value) == {"value", "unit"}:
                 fields[name] = FieldValue(
                     value=value["value"], unit=value["unit"], confidence=confidence
@@ -405,7 +404,12 @@ def extraction_results(app: AppSpec, confidence: float = 1.0) -> list[Extraction
                 fields[name] = FieldValue(value=value, confidence=confidence)
         results.append(
             ExtractionResult(
-                doc_id=doc_id, app_id=app.app_id, doc_type=DocType(doc_type), fields=fields
+                doc_id=doc.doc_id, app_id=truth.app_id, doc_type=doc.doc_type, fields=fields
             )
         )
     return results
+
+
+def extraction_results(app: AppSpec, confidence: float = 1.0) -> list[ExtractionResult]:
+    """The true fields of every present document of `app` as perfect extractions."""
+    return extractions_from_truth(ground_truth(app), confidence)

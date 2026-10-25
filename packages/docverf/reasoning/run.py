@@ -61,10 +61,62 @@ VERIFICATION_ORDER = [
 FIELD_FOR = {(dt.value, et, attr): field for (dt, field), (et, attr) in FIELD_MAP.items()}
 
 
+# Duplicate-detection methods, strongest first: an exact byte match beats a perceptual one.
+DUPLICATE_METHODS = ["sha256", "phash"]
+
+
+def _method_rank(method: object) -> int:
+    return (
+        DUPLICATE_METHODS.index(method) if method in DUPLICATE_METHODS else len(DUPLICATE_METHODS)
+    )
+
+
+def _duplicate_findings(app_id: str, checks: list[CheckResult]) -> list[Finding]:
+    """One `duplicate` finding per (document, document it duplicates).
+
+    An exact copy matches on both hashes, so provenance reports it twice (sha256 and pHash). They
+    collapse into one finding with the strongest check's evidence and every method that matched."""
+    groups: dict[tuple[str, tuple[str, ...] | None], list[CheckResult]] = {}
+    for c in checks:
+        for source in c.evidence.get("duplicates") or [None]:
+            groups.setdefault((c.doc_id, tuple(source) if source else None), []).append(c)
+    findings = []
+    for (doc_id, source), group in groups.items():
+        best = min(group, key=lambda c: _method_rank(c.evidence.get("hash_type")))
+        methods = sorted(
+            {str(c.evidence.get("hash_type", "unknown")) for c in group}, key=_method_rank
+        )
+        evidence = {"check": best.check, **best.evidence, "methods": methods}
+        message = best.reason
+        if source:
+            evidence["duplicates"] = [list(source)]
+            evidence["duplicate_of"] = {"app_id": source[0], "doc_id": source[-1]}
+            how = " and ".join(methods)
+            message = f"Duplicate of {source[-1]} in application {source[0]} ({how} match)"
+        findings.append(
+            Finding(
+                finding_id=new_finding_id(),
+                app_id=app_id,
+                type=FindingType.DUPLICATE,
+                severity=Severity.HIGH,
+                layer=best.layer,
+                doc_ids=[doc_id],
+                message=message,
+                evidence=evidence,
+            )
+        )
+    return findings
+
+
 def checks_to_findings(app_id: str, checks: list[CheckResult]) -> list[Finding]:
     """Turn non-clean provenance / forensic / verification checks into findings."""
     findings = []
+    duplicates = []
     for c in checks:
+        if c.check == "hash_duplicate":
+            if c.status in FLAGGED_STATUSES:
+                duplicates.append(c)
+            continue
         if c.check == "issuer_lookup":
             ftype = ISSUER_FINDINGS.get(c.verification_status) if c.verification_status else None
             severity = Severity.HIGH
@@ -93,7 +145,7 @@ def checks_to_findings(app_id: str, checks: list[CheckResult]) -> list[Finding]:
                 evidence={"check": c.check, **c.evidence},
             )
         )
-    return findings
+    return findings + _duplicate_findings(app_id, duplicates)
 
 
 def _field_key(app_id: str, f: Finding) -> tuple[str, str] | None:

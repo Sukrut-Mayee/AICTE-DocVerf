@@ -35,8 +35,8 @@ MISSING_DEED_NOTES: list[Finding] = [
     ("OWNER_IS_TRUST", "undetermined", "info"),
 ]
 # TRD §13.2: found by the provenance duplicate check, which needs the other applications. An exact
-# copy matches on both hashes (sha256 and pHash), and each match is its own `duplicate` finding.
-PROVENANCE: dict[str, list[Finding]] = {"DUPLICATE_PHOTO": [(None, "duplicate", "high")] * 2}
+# copy matches on both hashes (sha256 and pHash); reasoning reports it once.
+PROVENANCE: dict[str, list[Finding]] = {"DUPLICATE_PHOTO": [(None, "duplicate", "high")]}
 
 APPS = build_apps(20, seed=42)
 
