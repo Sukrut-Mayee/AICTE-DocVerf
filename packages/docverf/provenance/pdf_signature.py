@@ -154,7 +154,7 @@ def check_pdf_signature(path: str, doc_id: str) -> CheckResult:
         "trusted": trusted,
         "signer_subject": signer_subject,
         "signer_issuer": signer_issuer,
-        "summary": getattr(status, "summary", "") or "",
+        "summary": status.summary() if callable(getattr(status, "summary", None)) else "",
     }
 
     if intact and valid and trusted:

@@ -189,3 +189,29 @@ def test_cli_commands_smoke(tmp_path, monkeypatch, capsys):
     # verify (tampered -> exits with 1)
     ret = cli_main(["verify", str(tampered_pdf), "--doc-id", "sample_noc"])
     assert ret == 1
+
+
+def test_signature_evidence_is_json_serialisable(tmp_path, monkeypatch):
+    """pyHanko's `summary` is a method: the evidence must hold its text, or a signed document
+    cannot be written to the pipeline JSON / audit log."""
+    paths = generate_mock_ca(base_dir=tmp_path / "pki")
+    monkeypatch.setenv("TRUST_ROOTS_DIR", str(paths["trust_roots_dir"]))
+    get_settings.cache_clear()
+    signed = tmp_path / "signed.pdf"
+    sign_pdf_file(
+        _create_sample_pdf(tmp_path / "unsigned.pdf"),
+        signed,
+        paths["signer_cert"],
+        paths["signer_key"],
+    )
+
+    verified = check_pdf_signature(str(signed), "doc001")
+    assert verified.status == CheckStatus.VERIFIED
+    assert verified.evidence["summary"] == "INTACT:TRUSTED,UNTOUCHED"
+    verified.model_dump_json()
+
+    tamper_pdf_file(signed)
+    tampered = check_pdf_signature(str(signed), "doc001")
+    assert tampered.status == CheckStatus.MISMATCH
+    assert isinstance(tampered.evidence["summary"], str) and tampered.evidence["summary"]
+    tampered.model_dump_json()
