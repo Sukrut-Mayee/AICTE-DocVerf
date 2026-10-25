@@ -1,0 +1,425 @@
+{
+  "instituteId": "1-9876543",
+  "instituteName": "Shree Vidya Institute of Technology",
+  "campus": "Main Engineering Block - Floor 1",
+  "floor": "First Floor (North & South Wings)",
+  "totalAreaSqm": 1250,
+  "lastUpdated": "2027-01-20T10:30:00Z",
+  "rooms": [
+    {
+      "id": "room_lab_1",
+      "name": "Lab 1",
+      "type": "Physics & Applied Mechanics Laboratory",
+      "code": "LAB-101",
+      "carpetAreaSqm": 78.5,
+      "capacity": 30,
+      "svg": {
+        "x": 40,
+        "y": 270,
+        "width": 220,
+        "height": 180,
+        "door": { "x": 130, "y": 270, "label": "D1" }
+      },
+      "siteVisitNeeded": false,
+      "siteVisitReason": null,
+      "linkedPhotos": [
+        {
+          "id": "photo_lab1_01",
+          "filename": "SVIT_FL1_LAB1_OPTICAL_BENCH_NORTH.jpg",
+          "caption": "Optical bench and dark-room experimental partition bay",
+          "timestamp": "2027-01-15T11:20:00Z",
+          "dimensions": "4032x3024",
+          "aspectRatio": "4:3"
+        },
+        {
+          "id": "photo_lab1_02",
+          "filename": "SVIT_FL1_LAB1_SAFETY_CONSOLE.jpg",
+          "caption": "Main laboratory electrical isolation breaker and earth-leakage switchboard",
+          "timestamp": "2027-01-15T11:24:00Z",
+          "dimensions": "4032x3024",
+          "aspectRatio": "4:3"
+        }
+      ],
+      "certificates": [
+        {
+          "doc_id": "cert_lab1_calib",
+          "title": "Equipment Calibration & Verification Log 2026-27",
+          "referenceNumber": "NABL-CALIB-2026-9041",
+          "authority": "National Test House Accredited Calibration Agency",
+          "status": "submitted",
+          "validUntil": "2027-11-30"
+        },
+        {
+          "doc_id": "cert_lab1_elec",
+          "title": "Electrical Load & Earthing Resistance Certificate",
+          "referenceNumber": "MSEDCL-INSP-2026-881",
+          "authority": "State Electrical Inspectorate",
+          "status": "verified",
+          "validUntil": "2028-05-31"
+        }
+      ],
+      "checklistItems": [
+        {
+          "id": "chk_lab1_area",
+          "title": "Carpet area conforms to AICTE norm (>= 66 sq.m for 30 batch)",
+          "completed": true,
+          "ruleRef": "APH 2026-27 Appendix 4",
+          "notes": "Declared 78.5 sq.m on layout drawing."
+        },
+        {
+          "id": "chk_lab1_doors",
+          "title": "Dual exit access for emergency egress",
+          "completed": true,
+          "ruleRef": "NBC 2016 Part 4 Fire & Life Safety",
+          "notes": "Main corridor access door and secondary service exit door."
+        },
+        {
+          "id": "chk_lab1_firstaid",
+          "title": "First-aid station and eye-wash facility installed",
+          "completed": true,
+          "ruleRef": "AICTE Safety Manual §3.2",
+          "notes": "Mounted adjacent to entrance."
+        },
+        {
+          "id": "chk_lab1_ventilation",
+          "title": "Cross-ventilation and natural lighting area ratio >= 10%",
+          "completed": false,
+          "ruleRef": "NBC 2016 Part 8 Building Services",
+          "notes": "Awaiting window schedule verification from architectural drawings."
+        }
+      ]
+    },
+    {
+      "id": "room_lab_2",
+      "name": "Lab 2",
+      "type": "Chemistry & Environmental Engineering Laboratory",
+      "code": "LAB-102",
+      "carpetAreaSqm": 82.0,
+      "capacity": 30,
+      "svg": {
+        "x": 280,
+        "y": 270,
+        "width": 220,
+        "height": 180,
+        "door": { "x": 370, "y": 270, "label": "D2" }
+      },
+      "siteVisitNeeded": true,
+      "siteVisitReason": "Chemical fume hood exhaust routing and hazardous effluent neutralizer pit cannot be confirmed from photos. Expert Visit Committee inspection required.",
+      "linkedPhotos": [
+        {
+          "id": "photo_lab2_01",
+          "filename": "SVIT_FL1_LAB2_FUME_HOOD_WEST.jpg",
+          "caption": "Reagent storage racks and stainless steel fume cupboard",
+          "timestamp": "2027-01-16T09:45:00Z",
+          "dimensions": "3840x2160",
+          "aspectRatio": "16:9"
+        },
+        {
+          "id": "photo_lab2_02",
+          "filename": "SVIT_FL1_LAB2_EMERGENCY_SHOWER.jpg",
+          "caption": "Overhead emergency deluge shower and eye-wash basin",
+          "timestamp": "2027-01-16T09:50:00Z",
+          "dimensions": "4032x3024",
+          "aspectRatio": "4:3"
+        }
+      ],
+      "certificates": [
+        {
+          "doc_id": "cert_lab2_pcb",
+          "title": "State Pollution Control Board Consents & Effluent Clearance",
+          "referenceNumber": "MPCB-CONSENT-E-2026-00412",
+          "authority": "Maharashtra Pollution Control Board",
+          "status": "pending_review",
+          "validUntil": "2027-12-31"
+        },
+        {
+          "doc_id": "cert_lab2_fire",
+          "title": "Chemical Store Fire-Suppression Compliance Tag",
+          "referenceNumber": "DFS-CHEM-4412",
+          "authority": "Directorate of Fire Services",
+          "status": "submitted",
+          "validUntil": "2027-06-30"
+        }
+      ],
+      "checklistItems": [
+        {
+          "id": "chk_lab2_area",
+          "title": "Minimum instructional lab carpet area compliant (>= 66 sq.m)",
+          "completed": true,
+          "ruleRef": "APH 2026-27 Norms",
+          "notes": "82.0 sq.m declared."
+        },
+        {
+          "id": "chk_lab2_fume",
+          "title": "Dedicated acid fume exhaust duct extending above parapet",
+          "completed": false,
+          "ruleRef": "AICTE Safety Standard Annexure 9",
+          "notes": "Exhaust termination height obscured in exterior photo evidence."
+        },
+        {
+          "id": "chk_lab2_drain",
+          "title": "Acid-resistant neutralization pit before municipal discharge",
+          "completed": false,
+          "ruleRef": "Central Pollution Control Board Norms",
+          "notes": "Civil drainage plan not stamped by local municipal engineer."
+        },
+        {
+          "id": "chk_lab2_storage",
+          "title": "Flammable solvent locked cabinet with grounding strap",
+          "completed": true,
+          "ruleRef": "Factory Act / Institute Lab Rules",
+          "notes": "Visible in photograph."
+        }
+      ]
+    },
+    {
+      "id": "room_lab_3",
+      "name": "Lab 3",
+      "type": "Computing & Artificial Intelligence Laboratory",
+      "code": "LAB-103",
+      "carpetAreaSqm": 95.0,
+      "capacity": 40,
+      "svg": {
+        "x": 520,
+        "y": 270,
+        "width": 240,
+        "height": 180,
+        "door": { "x": 620, "y": 270, "label": "D3" }
+      },
+      "siteVisitNeeded": false,
+      "siteVisitReason": null,
+      "linkedPhotos": [
+        {
+          "id": "photo_lab3_01",
+          "filename": "SVIT_FL1_LAB3_TERMINALS_ROW_A.jpg",
+          "caption": "Student workstations with structured Cat-6 network drops",
+          "timestamp": "2027-01-14T14:10:00Z",
+          "dimensions": "4032x3024",
+          "aspectRatio": "4:3"
+        },
+        {
+          "id": "photo_lab3_02",
+          "filename": "SVIT_FL1_LAB3_SERVER_RACK_UPS.jpg",
+          "caption": "42U server cabinet with 20kVA online redundant UPS backup",
+          "timestamp": "2027-01-14T14:15:00Z",
+          "dimensions": "4032x3024",
+          "aspectRatio": "4:3"
+        }
+      ],
+      "certificates": [
+        {
+          "doc_id": "cert_lab3_lic",
+          "title": "System & Legal Software License Compliance Statement",
+          "referenceNumber": "SOFT-LIC-2027-9912",
+          "authority": "Campus Agreement Administrator",
+          "status": "verified",
+          "validUntil": "2028-06-30"
+        },
+        {
+          "doc_id": "cert_lab3_isp",
+          "title": "Dedicated Leased Line 1 Gbps Internet Bandwidth Certificate",
+          "referenceNumber": "TATA-TELE-ILL-2026-104",
+          "authority": "Telecom Regulatory Authority Licensed ISP",
+          "status": "verified",
+          "validUntil": "2028-03-31"
+        }
+      ],
+      "checklistItems": [
+        {
+          "id": "chk_lab3_terminal",
+          "title": "Student to terminal ratio conforms to 1:1 during scheduled hours",
+          "completed": true,
+          "ruleRef": "APH 2026-27 Computer Norms",
+          "notes": "40 high-performance workstations verified against stock ledger."
+        },
+        {
+          "id": "chk_lab3_ups",
+          "title": "Dedicated power backup with >= 30 minutes runtime",
+          "completed": true,
+          "ruleRef": "AICTE Infrastructure §5.1",
+          "notes": "20kVA UPS installed in ventilated enclosure."
+        },
+        {
+          "id": "chk_lab3_ac",
+          "title": "HVAC server rack ambient cooling maintained (<= 24°C)",
+          "completed": true,
+          "ruleRef": "ASHRAE Datacenter Guideline",
+          "notes": "Dual precision split units documented."
+        }
+      ]
+    },
+    {
+      "id": "room_cr_1",
+      "name": "Classroom 1",
+      "type": "Smart Lecture Hall",
+      "code": "CR-101",
+      "carpetAreaSqm": 68.0,
+      "capacity": 66,
+      "svg": {
+        "x": 40,
+        "y": 40,
+        "width": 220,
+        "height": 160,
+        "door": { "x": 130, "y": 200, "label": "D4" }
+      },
+      "siteVisitNeeded": false,
+      "siteVisitReason": null,
+      "linkedPhotos": [
+        {
+          "id": "photo_cr1_01",
+          "filename": "SVIT_FL1_CR1_LECTURE_DAIS_SOUTH.jpg",
+          "caption": "Tiered lecture seating, interactive smart panel, and ceiling projector",
+          "timestamp": "2027-01-12T16:00:00Z",
+          "dimensions": "3840x2160",
+          "aspectRatio": "16:9"
+        }
+      ],
+      "certificates": [
+        {
+          "doc_id": "cert_cr1_audio",
+          "title": "Acoustic Insulation & Noise Level Test Audit",
+          "referenceNumber": "AC-AUDIT-2026-302",
+          "authority": "Consulting Sound Engineers India",
+          "status": "submitted",
+          "validUntil": "2028-12-31"
+        }
+      ],
+      "checklistItems": [
+        {
+          "id": "chk_cr1_area",
+          "title": "Minimum classroom area >= 66 sq.m for 60 intake division",
+          "completed": true,
+          "ruleRef": "APH 2026-27 Table 2.1",
+          "notes": "68.0 sq.m verified from floor plan."
+        },
+        {
+          "id": "chk_cr1_ict",
+          "title": "Smart ICT projection and audio visual facility installed",
+          "completed": true,
+          "ruleRef": "AICTE Blended Learning Norms",
+          "notes": "Interactive touch board and 4K laser projector present."
+        },
+        {
+          "id": "chk_cr1_barrier_free",
+          "title": "Divyangjan accessible ramp / step-free front row access",
+          "completed": true,
+          "ruleRef": "Rights of Persons with Disabilities Act 2016",
+          "notes": "Level threshold entrance with 1.2m wide door."
+        }
+      ]
+    },
+    {
+      "id": "room_cr_2",
+      "name": "Classroom 2",
+      "type": "Standard Lecture Hall",
+      "code": "CR-102",
+      "carpetAreaSqm": 67.5,
+      "capacity": 66,
+      "svg": {
+        "x": 280,
+        "y": 40,
+        "width": 220,
+        "height": 160,
+        "door": { "x": 370, "y": 200, "label": "D5" }
+      },
+      "siteVisitNeeded": false,
+      "siteVisitReason": null,
+      "linkedPhotos": [
+        {
+          "id": "photo_cr2_01",
+          "filename": "SVIT_FL1_CR2_SEATING_LAYOUT.jpg",
+          "caption": "Dual-bench seating configuration with ceiling mounted fans",
+          "timestamp": "2027-01-13T10:15:00Z",
+          "dimensions": "4032x3024",
+          "aspectRatio": "4:3"
+        }
+      ],
+      "certificates": [
+        {
+          "doc_id": "cert_cr2_light",
+          "title": "Illumination Lux Level Measurement Report",
+          "referenceNumber": "LUX-2026-SVIT-11",
+          "authority": "National Institute of Industrial Engineering Assessor",
+          "status": "submitted",
+          "validUntil": "2028-06-30"
+        }
+      ],
+      "checklistItems": [
+        {
+          "id": "chk_cr2_area",
+          "title": "Classroom area complies with minimum norm (>= 66 sq.m)",
+          "completed": true,
+          "ruleRef": "APH 2026-27 Table 2.1",
+          "notes": "67.5 sq.m measured."
+        },
+        {
+          "id": "chk_cr2_cctv",
+          "title": "CCTV surveillance camera coverage for exam proctoring",
+          "completed": false,
+          "ruleRef": "University Examination Safety Guidelines",
+          "notes": "CCTV recording node configuration pending IP allocation."
+        }
+      ]
+    },
+    {
+      "id": "room_office",
+      "name": "Office",
+      "type": "Head of Department & Faculty Administrative Office",
+      "code": "OFF-101",
+      "carpetAreaSqm": 52.0,
+      "capacity": 10,
+      "svg": {
+        "x": 520,
+        "y": 40,
+        "width": 240,
+        "height": 160,
+        "door": { "x": 620, "y": 200, "label": "D6" }
+      },
+      "siteVisitNeeded": false,
+      "siteVisitReason": null,
+      "linkedPhotos": [
+        {
+          "id": "photo_off_01",
+          "filename": "SVIT_FL1_OFF_CABINS_EAST.jpg",
+          "caption": "Faculty workstation cubicles and departmental records repository",
+          "timestamp": "2027-01-12T11:00:00Z",
+          "dimensions": "4032x3024",
+          "aspectRatio": "4:3"
+        }
+      ],
+      "certificates": [
+        {
+          "doc_id": "cert_off_records",
+          "title": "Fire-Resistant Document Safe Compliance Certificate",
+          "referenceNumber": "GODREJ-SAFE-UL-72",
+          "authority": "Bureau of Indian Standards / Underwriters Laboratories",
+          "status": "verified",
+          "validUntil": "2030-12-31"
+        }
+      ],
+      "checklistItems": [
+        {
+          "id": "chk_off_area",
+          "title": "Administrative office carpet area >= 30 sq.m",
+          "completed": true,
+          "ruleRef": "APH 2026-27 Administrative Area Table",
+          "notes": "52.0 sq.m exceeds minimum requirement."
+        },
+        {
+          "id": "chk_off_record_lock",
+          "title": "Fire-safe storage for confidential student examination records",
+          "completed": true,
+          "ruleRef": "AICTE Examination Ordinance",
+          "notes": "2-hour fire rated safe documented."
+        },
+        {
+          "id": "chk_off_grievance",
+          "title": "Ombudsman and Internal Complaints Committee notice displayed",
+          "completed": true,
+          "ruleRef": "AICTE Regulations on Anti-Ragging & ICC",
+          "notes": "Prominently mounted on reception board."
+        }
+      ]
+    }
+  ]
+}

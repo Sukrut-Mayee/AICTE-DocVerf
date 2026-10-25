@@ -40,6 +40,18 @@ export default function RootLayout({
                 >
                   Review queue
                 </Link>
+                <Link
+                  href="/digital-twin"
+                  className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  Digital twin
+                </Link>
+                <Link
+                  href="/portal"
+                  className="rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  Institute portal
+                </Link>
                 <span className="hidden items-center gap-1.5 rounded-md border px-3 py-2 text-xs text-muted-foreground sm:flex">
                   <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Human review required
