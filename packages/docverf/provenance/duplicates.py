@@ -24,6 +24,7 @@ def check_duplicates(
 ) -> list[CheckResult]:
     """Exact sha256 or pHash distance <= PHASH_MAX_DIST under a different app_id.
 
+    PDFs use SHA-256 for exact byte integrity; pHash is used only for photo/image documents.
     Result is a `duplicate` finding (high). Pure: does not mutate `index`; the caller adds the
     new hashes afterwards.
     """
@@ -35,6 +36,8 @@ def check_duplicates(
     results: list[CheckResult] = []
 
     for hash_type, hash_value in hashes.items():
+        if not hash_value:
+            continue
         collisions: list[tuple[str, str]] = []
 
         if hash_type == "sha256":
@@ -43,7 +46,11 @@ def check_duplicates(
                     collisions.append((other_app_id, other_doc_id))
 
         elif hash_type == "phash":
+            if doc_id.lower().endswith(".pdf"):
+                continue
             for stored_hash, entries in index.items():
+                if not stored_hash:
+                    continue
                 dist = _hamming_distance_hex(stored_hash, hash_value)
                 if dist is None or dist > max_dist:
                     continue
@@ -67,9 +74,7 @@ def check_duplicates(
                         "hash_type": hash_type,
                         "hash_value": hash_value,
                         "duplicates": collisions,
-                        "details": (
-                            {"max_distance": max_dist} if hash_type == "phash" else {}
-                        ),
+                        "details": ({"max_distance": max_dist} if hash_type == "phash" else {}),
                     },
                     checked_at=datetime.now(),
                 )

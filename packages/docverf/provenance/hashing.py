@@ -49,17 +49,17 @@ def _phash_for_image(path: str) -> str:
 def hash_file(path: str) -> dict[str, str]:
     """Return {"sha256": ..., "phash": ...}.
 
-    SHA-256 is computed over the original file bytes. The perceptual hash is of page 1
-    rendered at 150 DPI for PDFs, or of the image itself for image files. Files that are
-    neither PDFs nor images return an empty perceptual hash.
+    SHA-256 is computed over the original file bytes for exact file integrity and
+    byte-for-byte duplicate comparison. The perceptual hash (pHash) is computed only
+    for photo/image documents. PDFs and other non-image files return an empty perceptual
+    hash to prevent false duplicate detection from similar document templates.
     """
     with open(path, "rb") as fh:
         data = fh.read()
     sha256 = hashlib.sha256(data).hexdigest()
 
     if _is_pdf(path):
-        image = _render_page1_at_150dpi(path)
-        phash = str(imagehash.phash(image))
+        phash = ""
     else:
         phash = _phash_for_image(path)
 

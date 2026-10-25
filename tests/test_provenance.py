@@ -2,7 +2,6 @@
 
 import datetime
 import hashlib
-import io
 import shutil
 from pathlib import Path
 
@@ -64,7 +63,7 @@ def test_hash_file_identical_bytes_identical_hash(tmp_path):
     assert hash_file(pa) == hash_file(pb)
 
 
-def test_hash_file_pdf_page1_phash(tmp_path):
+def test_hash_file_pdf_no_phash(tmp_path):
     doc = fitz.open()
     page = doc.new_page()
     page.insert_text((72, 72), "Provenance page one")
@@ -74,15 +73,9 @@ def test_hash_file_pdf_page1_phash(tmp_path):
 
     result = hash_file(path)
     assert result["sha256"] == _sha256(Path(path).read_bytes())
+    # PDFs do not use page-render pHash to prevent template false positives.
+    assert result["phash"] == ""
 
-    # Independent render of page 1 at 150 DPI for comparison.
-    doc = fitz.open(path)
-    page = doc[0]
-    zoom = 150.0 / 72.0
-    pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))
-    doc.close()
-    expected_phash = _phash_of_image(Image.open(io.BytesIO(pix.tobytes("png"))))
-    assert result["phash"] == expected_phash
 
 
 def test_hash_file_image_phash(tmp_path):
@@ -177,6 +170,99 @@ def test_check_duplicates_multiple_hash_types():
         index,
     )
     assert len(results) == 1  # only sha256 matches; phash key absent from index
+
+
+def test_different_pdfs_with_similar_templates_not_flagged_as_duplicates(tmp_path):
+    def make_noc_pdf(filename: str, college_name: str, app_no: str) -> str:
+        doc = fitz.open()
+        page = doc.new_page(width=595, height=842)
+        page.insert_text((50, 50), "ALL INDIA COUNCIL FOR TECHNICAL EDUCATION", fontsize=14)
+        page.insert_text(
+            (50, 70), "APPROVAL PROCESS 2027-28 - NO OBJECTION CERTIFICATE", fontsize=11
+        )
+        page.draw_rect(fitz.Rect(40, 40, 555, 800), width=1.5)
+        page.insert_text(
+            (50, 120), "This certificate confirms that the institution complies with norms."
+        )
+        page.insert_text((50, 140), "Application Number: " + app_no)
+        page.insert_text((50, 160), "Institution Name: " + college_name)
+        page.insert_text(
+            (50, 200), "Valid for academic session 2027-2028 under regional office guidelines."
+        )
+        path = str(tmp_path / filename)
+        doc.save(path)
+        doc.close()
+        return path
+
+    pdf1 = make_noc_pdf("app001_noc.pdf", "Alpha Institute of Technology", "1-000000001")
+    pdf2 = make_noc_pdf("app002_noc.pdf", "Beta College of Engineering", "1-000000002")
+
+    hash1 = hash_file(pdf1)
+    hash2 = hash_file(pdf2)
+    assert hash1["sha256"] != hash2["sha256"]
+    assert hash1["phash"] == ""
+    assert hash2["phash"] == ""
+
+    index: HashIndex = {}
+    for h in [hash1["sha256"], hash1["phash"]]:
+        if h:
+            index.setdefault(h, []).append(("app001", "app001_noc"))
+
+    results = check_duplicates("app002", "app002_noc", hash2, index)
+    assert results == []
+
+
+def test_identical_pdfs_flagged_as_sha256_duplicates(tmp_path):
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Identical Land Deed Document")
+    path1 = str(tmp_path / "app001_deed.pdf")
+    doc.save(path1)
+    doc.close()
+
+    path2 = str(tmp_path / "app002_deed.pdf")
+    shutil.copyfile(path1, path2)
+
+    hash1 = hash_file(path1)
+    hash2 = hash_file(path2)
+    assert hash1["sha256"] == hash2["sha256"]
+    assert hash1["phash"] == ""
+
+    index: HashIndex = {hash1["sha256"]: [("app001", "app001_deed")]}
+    results = check_duplicates("app002", "app002_deed", hash2, index)
+    assert len(results) == 1
+    assert results[0].evidence["hash_type"] == "sha256"
+    assert ("app001", "app001_deed") in results[0].evidence["duplicates"]
+
+
+def test_identical_and_near_identical_photos_detected_as_phash_duplicates(tmp_path):
+    img = Image.new("RGB", (100, 100), color=(120, 80, 200))
+    path1 = str(tmp_path / "photo1.jpg")
+    img.save(path1, format="JPEG")
+
+    path2 = str(tmp_path / "photo2.jpg")
+    shutil.copyfile(path1, path2)
+
+    hash1 = hash_file(path1)
+    hash2 = hash_file(path2)
+    assert hash1["sha256"] == hash2["sha256"]
+    assert hash1["phash"] != ""
+    assert hash1["phash"] == hash2["phash"]
+
+    index: HashIndex = {
+        hash1["sha256"]: [("app001", "app001_photo")],
+        hash1["phash"]: [("app001", "app001_photo")],
+    }
+    results = check_duplicates("app002", "app002_photo", hash2, index)
+    assert len(results) >= 1
+    matched_types = {r.evidence["hash_type"] for r in results}
+    assert "phash" in matched_types or "sha256" in matched_types
+
+
+def test_check_duplicates_pdf_ignores_phash():
+    index: HashIndex = {"0123456789abcdef": [("app001", "app001_doc.pdf")]}
+    results = check_duplicates("app002", "app002_doc.pdf", {"phash": "0123456789abcdef"}, index)
+    assert results == []
 
 
 # ---------------- extract_metadata ----------------
