@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { FileWarning, FileText } from "lucide-react";
 
+import { ImageViewer } from "@/components/officer/image-viewer";
 import { documentFileUrl, type DocumentStatus, type Finding } from "@/lib/api";
 
 const PdfViewerClient = dynamic(() => import("./pdf-viewer-client"), {
@@ -53,6 +54,19 @@ export function PdfViewer({
           The extracted findings and their notes remain available on the right.
         </p>
       </div>
+    );
+  }
+
+  if (/\.(jpe?g|png|gif|webp|bmp)$/i.test(document.filename ?? "")) {
+    return (
+      <ImageViewer
+        key={document.doc_id}
+        url={url}
+        docId={document.doc_id}
+        findings={findings}
+        selectedFindingId={selectedFindingId}
+        onSelectFinding={onSelectFinding}
+      />
     );
   }
 
