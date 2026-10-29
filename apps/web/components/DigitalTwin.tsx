@@ -111,7 +111,7 @@ export function DigitalTwin() {
                     Institute Digital Twin
                   </h1>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                    FR-22 Prototype
+                    Concept preview
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">

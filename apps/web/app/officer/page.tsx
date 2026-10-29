@@ -148,7 +148,7 @@ export default function OfficerQueuePage() {
             Applications awaiting review
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Sorted by the pipeline priority (100 × high + 10 × medium + low). Open an
+            Sorted by risk: high-severity findings first. Open an
             application to inspect evidence, act on findings, and record a decision.
           </p>
         </div>
@@ -240,7 +240,7 @@ export default function OfficerQueuePage() {
                 <CardTitle>Review queue</CardTitle>
                 <CardDescription>
                   Flag counts come from the pipeline findings; pending counts reflect
-                  officer actions saved in SQLite.
+                  officer actions you have recorded.
                 </CardDescription>
               </div>
             </CardHeader>

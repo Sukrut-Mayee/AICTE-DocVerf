@@ -91,7 +91,7 @@ export function SummaryBar({ summary }: { summary: ApplicationSummary }) {
               Priority
             </p>
             <p className="font-mono text-xl font-semibold">{summary.priority}</p>
-            <p className="text-[10px] text-muted-foreground">100 × high + 10 × medium + low</p>
+            <p className="text-[10px] text-muted-foreground">Sorted by risk: high-severity findings first</p>
           </div>
         </div>
 
@@ -156,15 +156,15 @@ export function SummaryBar({ summary }: { summary: ApplicationSummary }) {
             <code className="rounded bg-sky-50 px-1 py-0.5">
               tests/fixtures/apps/app_conflict
             </code>
-            . Officer actions and decisions are real SQLite records; the findings and audit
-            reference were not produced by a live pipeline run.
+            . Officer actions and decisions are recorded; the findings and audit reference
+            were not produced by a live pipeline run.
           </p>
         ) : null}
         {isFallback ? (
           <p className="text-[11px] leading-relaxed text-sky-800">
             Not live pipeline output: these findings come from the synthetic ground truth run
             through the reasoning engine (perfect extraction, no provenance, forensic or issuer
-            checks). Officer actions and decisions are real SQLite records.
+            checks). Officer actions and decisions are recorded.
           </p>
         ) : null}
       </CardContent>
