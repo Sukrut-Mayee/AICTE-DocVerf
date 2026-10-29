@@ -11,11 +11,13 @@ const KIND_LABEL: Record<NetworkEntity["kind"], string> = {
   land_parcel: "Land parcel",
   trust: "Trust registration",
   photo: "Lab photo",
+  document: "Identical document",
 };
 const KIND_COLOR: Record<NetworkEntity["kind"], string> = {
   land_parcel: "#b45309",
   trust: "#0369a1",
   photo: "#7c3aed",
+  document: "#be123c",
 };
 const ROW = 46;
 const WIDTH = 760;
@@ -105,7 +107,7 @@ export default function NetworkPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Network</h1>
         <p className="text-sm text-muted-foreground">
-          Land parcels, trust registrations and lab photos that appear in applications from more
+          Land parcels, trust registrations, lab photos and documents that appear in applications from more
           than one institute. Each is a preliminary indicator for the officer to review.
         </p>
       </div>
@@ -119,7 +121,7 @@ export default function NetworkPage() {
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : entities.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No shared land parcels, trusts or photos across institutes.
+          No shared land parcels, trusts, photos or documents across institutes.
         </p>
       ) : (
         <>

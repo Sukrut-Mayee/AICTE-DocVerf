@@ -264,7 +264,7 @@ export function documentFileUrl(fileUrl: string | null): string | null {
 
 export interface NetworkEntity {
   id: string;
-  kind: "land_parcel" | "trust" | "photo";
+  kind: "land_parcel" | "trust" | "photo" | "document";
   value: string;
   applications: Array<{ app_id: string; institute_name: string; doc_id: string }>;
 }

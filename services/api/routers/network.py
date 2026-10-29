@@ -13,8 +13,8 @@ router = APIRouter(tags=["network"])
 
 @router.get("/network")
 def get_network(request: Request) -> dict[str, Any]:
-    """Land parcels and trust registrations claimed by different institutes, and lab photos that
-    appear in more than one application (from the `duplicate` findings)."""
+    """Land parcels and trust registrations claimed by different institutes, plus lab photos and
+    documents that appear in more than one application (from the `duplicate` findings)."""
     applications = request.app.state.pipelines.load_all()
     names = {a.app_id: _institute_name(a.data.extractions) for a in applications}
     entities = shared_entities([a.data.extractions for a in applications])
@@ -34,8 +34,8 @@ def get_network(request: Request) -> dict[str, Any]:
     for doc_id, members in photos.items():
         entities.append(
             {
-                "id": f"photo:{doc_id}",
-                "kind": "photo",
+                "id": f"file:{doc_id}",
+                "kind": "photo" if "lab_photo" in doc_id else "document",
                 "value": doc_id,
                 "applications": [
                     {**m, "institute_name": names.get(m["app_id"], "")} for m in members.values()

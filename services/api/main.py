@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .pipeline import PipelineRepository
-from .routers import applications, files, findings, network
+from .routers import applications, files, findings, network, submissions
 from .settings import ApiSettings
 from .store import OfficerStore
 
@@ -44,6 +44,7 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
     app.include_router(findings.router, prefix="/v1")
     app.include_router(files.router, prefix="/v1")
     app.include_router(network.router, prefix="/v1")
+    app.include_router(submissions.router, prefix="/v1")
 
     @app.get("/health", tags=["health"])
     def health() -> dict[str, str]:

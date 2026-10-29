@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   FileText,
   Upload,
@@ -14,14 +15,14 @@ import {
   MapPin,
   User,
   Hash,
-  Layers,
   ArrowRight,
   ShieldCheck,
   Info,
   Clock,
-  Sparkles,
-  Terminal
+  Sparkles
 } from "lucide-react";
+
+import { API_BASE_URL } from "@/lib/api";
 
 // Configurable file upload constraints
 export const UPLOAD_CONSTRAINTS = {
@@ -35,6 +36,8 @@ export interface ApplicationFormFields {
   instituteName: string;
   applicationNo: string;
   aictePermanentId: string;
+  trustRegNo: string;
+  landSurveyNo: string;
   contactPerson: string;
   email: string;
   phone: string;
@@ -74,6 +77,8 @@ export function buildApplicationMultipartPayload(
     institute_name: fields.instituteName.trim(),
     application_no: fields.applicationNo.trim(),
     aicte_permanent_id: fields.aictePermanentId.trim(),
+    trust_reg_no: fields.trustRegNo.trim(),
+    land_survey_no: fields.landSurveyNo.trim(),
     contact_person: fields.contactPerson.trim(),
     email: fields.email.trim(),
     phone: fields.phone.trim(),
@@ -165,12 +170,22 @@ export function buildApplicationMultipartPayload(
   return { formData, summary };
 }
 
+export interface SubmissionResult {
+  app_id: string;
+  priority: number;
+  findings_count: number;
+  status: string;
+  seconds: number;
+}
+
 export function PortalSubmit() {
   // Form Details State
   const [fields, setFields] = useState<ApplicationFormFields>({
     instituteName: "Shree Vidya Institute of Technology",
     applicationNo: "1-46200000001",
     aictePermanentId: "1-9876543",
+    trustRegNo: "",
+    landSurveyNo: "",
     contactPerson: "Dr. R. K. Deshmukh",
     email: "principal@svit-edu.in",
     phone: "+91 98220 12345",
@@ -189,7 +204,17 @@ export function PortalSubmit() {
   // Validation Errors
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [preparedPayloadSummary, setPreparedPayloadSummary] = useState<SubmissionSummary | null>(null);
+  const [result, setResult] = useState<SubmissionResult | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  // Seconds since the submission started, for the progress state.
+  useEffect(() => {
+    if (!isSubmitting) return;
+    setElapsed(0);
+    const timer = setInterval(() => setElapsed((value) => value + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isSubmitting]);
 
   // Hidden File Input Refs
   const landDeedInputRef = useRef<HTMLInputElement>(null);
@@ -307,8 +332,8 @@ export function PortalSubmit() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Form Submission Handler
-  const handleSubmit = (e: React.FormEvent) => {
+  // Form Submission Handler: send the application to the API and wait for the checks.
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
@@ -317,22 +342,35 @@ export function PortalSubmit() {
     }
 
     setIsSubmitting(true);
+    setResult(null);
+    setSubmitError(null);
 
     try {
-      // 1. Build multipart payload matching TRD §19 Q10
-      const { summary } = buildApplicationMultipartPayload(fields, files);
-
-      // 2. Safe development log (excludes raw binary contents & sensitive values)
-      console.log(
-        "%c[AICTE DocVerf Portal] Multipart Payload Constructed (TRD §19 Q10)",
-        "color: #818cf8; font-weight: bold; font-size: 13px;"
-      );
-      console.log("Form JSON Part:", summary.form);
-      console.log("DocTypes Array Part:", summary.doc_types);
-      console.log("Attached Files Manifest:", summary.fileManifest);
-
-      // 3. Set summary state for on-screen development feedback
-      setPreparedPayloadSummary(summary);
+      const { formData } = buildApplicationMultipartPayload(fields, files);
+      let response: Response;
+      try {
+        response = await fetch(`${API_BASE_URL}/v1/submissions`, {
+          method: "POST",
+          body: formData,
+        });
+      } catch {
+        throw new Error(
+          `Cannot reach the DocVerf API at ${API_BASE_URL}. Start the backend and try again.`
+        );
+      }
+      if (!response.ok) {
+        let detail = `The API rejected the submission (HTTP ${response.status}).`;
+        try {
+          const body = (await response.json()) as { detail?: unknown };
+          if (typeof body.detail === "string") detail = body.detail;
+        } catch {
+          // keep the generic message
+        }
+        throw new Error(detail);
+      }
+      setResult((await response.json()) as SubmissionResult);
+    } catch (caught) {
+      setSubmitError(caught instanceof Error ? caught.message : "The submission failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -354,7 +392,7 @@ export function PortalSubmit() {
                     Institute Application Portal
                   </h1>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                    FR-01 / PRD §8.1
+                    Application intake
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
@@ -435,6 +473,36 @@ export function PortalSubmit() {
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
               />
               {errors.aictePermanentId && <p className="text-[11px] text-rose-400">{errors.aictePermanentId}</p>}
+            </div>
+
+            {/* Trust registration number (optional) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <Hash className="w-3.5 h-3.5 text-slate-400" />
+                Trust registration no. (optional)
+              </label>
+              <input
+                type="text"
+                value={fields.trustRegNo}
+                onChange={(e) => setFields({ ...fields, trustRegNo: e.target.value })}
+                placeholder="e.g. E-1234/PUNE"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
+              />
+            </div>
+
+            {/* Land survey number (optional) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                Land survey no. (optional)
+              </label>
+              <input
+                type="text"
+                value={fields.landSurveyNo}
+                onChange={(e) => setFields({ ...fields, landSurveyNo: e.target.value })}
+                placeholder="e.g. 66/8"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
+              />
             </div>
 
             {/* Contact Person */}
@@ -852,7 +920,7 @@ export function PortalSubmit() {
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
             <div className="text-xs text-slate-400">
-              Payload conforms to <strong className="text-slate-200">TRD §19 Q10</strong> (Form JSON + Files + DocTypes array)
+              Documents are checked automatically before officer review
             </div>
 
             <button
@@ -861,67 +929,51 @@ export function PortalSubmit() {
               className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4 text-indigo-200" />
-              <span>{isSubmitting ? "Constructing Payload..." : "Prepare Submission (TRD §19 Q10)"}</span>
+              <span>{isSubmitting ? "Checking documents…" : "Submit application"}</span>
             </button>
           </div>
         </div>
       </form>
 
-      {/* Development-Only Success & Multipart Payload Breakdown Card */}
-      {preparedPayloadSummary && (
-        <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-6 space-y-4 shadow-2xl animate-in fade-in duration-200">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                Development Notice: Multipart Payload Ready for Saish Backend
-              </h3>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">
-              TRD §19 Q10 Contract Validated
-            </span>
+      {isSubmitting && (
+        <div className="bg-slate-900 border border-indigo-500/40 rounded-2xl p-6 flex items-center gap-3">
+          <Clock className="w-5 h-5 text-indigo-300 animate-pulse" />
+          <div className="text-sm text-slate-200">
+            Checking provenance, extracting fields and comparing against earlier applications…
+            <span className="ml-2 text-xs text-slate-400">{elapsed} s</span>
           </div>
+        </div>
+      )}
 
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Per the instructions, no real API request was dispatched. The multipart <code className="text-indigo-300">FormData</code> was successfully constructed and validated. Below is the safe, sanitized manifest of the prepared payload:
+      {submitError && (
+        <div className="bg-slate-900 border border-rose-500/40 rounded-2xl p-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-bold text-white">The application could not be processed</h3>
+            <p className="text-xs text-slate-300 mt-1">{submitError}</p>
+          </div>
+        </div>
+      )}
+
+      {result && (
+        <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-6 space-y-4 shadow-2xl">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <h3 className="text-sm font-bold text-white">
+              Application {result.app_id} submitted for officer review
+            </h3>
+          </div>
+          <p className="text-sm text-slate-200">
+            Processed in {result.seconds} s — {result.findings_count}{" "}
+            {result.findings_count === 1 ? "finding" : "findings"}
           </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-            {/* Form JSON Representation */}
-            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-              <div className="text-indigo-400 font-bold flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5" />
-                <span>part &apos;form&apos; (JSON string)</span>
-              </div>
-              <pre className="text-[11px] text-slate-300 overflow-x-auto p-2 bg-slate-900/60 rounded border border-slate-800/80">
-                {JSON.stringify(preparedPayloadSummary.form, null, 2)}
-              </pre>
-            </div>
-
-            {/* DocTypes & Files Array Representation */}
-            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-              <div className="text-indigo-400 font-bold flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5" />
-                <span>part &apos;doc_types&apos; & file order ({preparedPayloadSummary.filesCount} files)</span>
-              </div>
-              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                {preparedPayloadSummary.fileManifest.map((item) => (
-                  <div
-                    key={item.index}
-                    className="p-2 rounded bg-slate-900/80 border border-slate-800 flex items-center justify-between text-[11px]"
-                  >
-                    <div>
-                      <span className="text-slate-500 mr-2">[{item.index}]</span>
-                      <span className="text-slate-200">{item.name}</span>
-                    </div>
-                    <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[10px]">
-                      {item.docType}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <Link
+            href={`/officer/applications/${encodeURIComponent(result.app_id)}`}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition"
+          >
+            Open in officer console
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       )}
     </div>

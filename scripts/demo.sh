@@ -15,6 +15,9 @@ for candidate in .venv-wsl/bin/python .venv/bin/python; do
 done
 PY="${PY:-python}"
 
+# Portal submissions run the live pipeline inside the API; its audit log needs a database.
+export DATABASE_URL="${DATABASE_URL:-sqlite:///data/ledger.db}"
+
 LOGS=data/demo-logs
 mkdir -p "$LOGS"
 PIDS=()

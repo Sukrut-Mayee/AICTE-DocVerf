@@ -5,7 +5,7 @@ import { ArrowLeft, FileText } from "lucide-react";
 
 export const metadata = {
   title: "Institute Application Portal — AICTE DocVerf",
-  description: "Extension of Approval document intake and multipart submission (FR-01 / TRD §19 Q10).",
+  description: "Extension of Approval document intake and submission.",
 };
 
 export default function PortalPage() {
@@ -26,7 +26,7 @@ export default function PortalPage() {
             </div>
             <div>
               <span className="font-bold text-sm text-white">DocVerf Institute Portal</span>
-              <span className="text-[10px] text-slate-400 ml-2">FR-01 Intake</span>
+              <span className="text-[10px] text-slate-400 ml-2">Application intake</span>
             </div>
           </div>
 
@@ -55,7 +55,7 @@ export default function PortalPage() {
       </div>
 
       <footer className="border-t border-slate-900 bg-slate-950 py-4 px-4 text-center text-xs text-slate-500">
-        AICTE DocVerf Institute Application Portal • FR-01 Intake & Document Validation • TRD §19 Q10 Compliant.
+        AICTE DocVerf Institute Application Portal • Intake & Document Validation.
       </footer>
     </div>
   );
