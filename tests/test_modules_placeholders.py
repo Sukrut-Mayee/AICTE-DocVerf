@@ -48,14 +48,6 @@ def test_forensics(tmp_path):
     assert result.check == "ela"
 
 
-def test_reasoning():
-    # run_reasoning / aggregate are implemented and tested in tests/test_reasoning_run.py.
-    from docverf.reasoning.cross_institution import check_cross_institution
-
-    with pytest.raises(NotImplementedError):
-        check_cross_institution("appx", [], {})
-
-
 def test_verification():
     from docverf.verification.connectors.mock import MockIssuerConnector
 

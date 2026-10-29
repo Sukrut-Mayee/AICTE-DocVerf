@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   Check,
@@ -50,6 +51,22 @@ interface FindingsPanelProps {
   focusNonce: number;
   onFocusFinding: (finding: Finding) => void;
   onUpdated: () => Promise<void>;
+}
+
+interface OtherClaimant {
+  app_id: string;
+  institute_name?: string;
+  doc_id?: string;
+}
+
+/** Applications that claim the same land parcel / trust (cross-institution reuse findings). */
+function alsoClaimedBy(finding: Finding): OtherClaimant[] {
+  const raw = finding.evidence?.also_claimed_by;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (entry): entry is OtherClaimant =>
+      !!entry && typeof entry === "object" && typeof (entry as OtherClaimant).app_id === "string",
+  );
 }
 
 function sourceLabel(documents: DocumentStatus[], docId: string): string {
@@ -324,6 +341,25 @@ export function FindingsPanel({
                     No bounding box was supplied for this finding; review the values and
                     document text instead.
                   </p>
+                ) : null}
+
+                {alsoClaimedBy(finding).length > 0 ? (
+                  <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                    <p className="font-medium">Also claimed by</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {alsoClaimedBy(finding).map((other) => (
+                        <li key={`${other.app_id}-${other.doc_id}`}>
+                          <Link
+                            href={`/officer/applications/${encodeURIComponent(other.app_id)}`}
+                            className="font-medium text-sky-800 underline"
+                          >
+                            {other.app_id}
+                          </Link>
+                          {other.institute_name ? ` · ${other.institute_name}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : null}
 
                 {Object.keys(finding.evidence ?? {}).length > 0 ? (

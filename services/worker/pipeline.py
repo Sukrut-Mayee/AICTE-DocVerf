@@ -57,6 +57,7 @@ from docverf.provenance.hashing import hash_file
 from docverf.provenance.metadata import extract_metadata
 from docverf.provenance.pdf_signature import check_pdf_signature
 from docverf.provenance.qr import decode_qr
+from docverf.reasoning.cross_institution import check_cross_institution, load_prior
 from docverf.reasoning.run import aggregate, run_reasoning
 from docverf.schemas import (
     CheckResult,
@@ -268,6 +269,10 @@ class Run:
 
         with stage("reasoning"):
             findings = run_reasoning(app_id, extractions, checks)
+            # after the per-application rules: the earlier applications' outputs are on disk
+            findings += check_cross_institution(
+                app_id, extractions, load_prior(self.out_dir, app_id)
+            )
             documents, priority = aggregate(
                 app_id, findings, checks, doc_ids=[d.doc_id for d in docs]
             )

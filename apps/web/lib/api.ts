@@ -261,3 +261,14 @@ export function documentFileUrl(fileUrl: string | null): string | null {
   if (/^https?:\/\//i.test(fileUrl)) return fileUrl;
   return `${API_BASE_URL}${fileUrl.startsWith("/") ? "" : "/"}${fileUrl}`;
 }
+
+export interface NetworkEntity {
+  id: string;
+  kind: "land_parcel" | "trust" | "photo";
+  value: string;
+  applications: Array<{ app_id: string; institute_name: string; doc_id: string }>;
+}
+
+export function getNetwork(): Promise<{ entities: NetworkEntity[] }> {
+  return request<{ entities: NetworkEntity[] }>("/v1/network");
+}
