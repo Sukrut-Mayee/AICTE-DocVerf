@@ -177,7 +177,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     });
   } catch {
     throw new ApiError(
-      `Cannot reach the DocVerf API at ${API_BASE_URL}. Start the backend and try again.`,
+      `Cannot reach the DocVerif API at ${API_BASE_URL}. Start the backend and try again.`,
       0,
       null,
     );

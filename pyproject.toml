@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "docverf"
 version = "0.1.0"
-description = "AICTE DocVerf: document verification decision-support (see docs/TRD.md)"
+description = "AICTE DocVerif: document verification decision-support (see docs/TRD.md)"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 # Exact pins live in requirements/*.txt; this is only what `import docverf` needs.

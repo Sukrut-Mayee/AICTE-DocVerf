@@ -4,7 +4,7 @@ import { PortalSubmit } from "@/components/PortalSubmit";
 import { ArrowLeft, FileText } from "lucide-react";
 
 export const metadata = {
-  title: "Institute Application Portal — AICTE DocVerf",
+  title: "Institute Application Portal — AICTE DocVerif",
   description: "Extension of Approval document intake and submission.",
 };
 
@@ -25,7 +25,7 @@ export default function PortalPage() {
               AICTE
             </div>
             <div>
-              <span className="font-bold text-sm text-white">DocVerf Institute Portal</span>
+              <span className="font-bold text-sm text-white">DocVerif Institute Portal</span>
               <span className="text-[10px] text-slate-400 ml-2">Application intake</span>
             </div>
           </div>
@@ -55,7 +55,7 @@ export default function PortalPage() {
       </div>
 
       <footer className="border-t border-slate-900 bg-slate-950 py-4 px-4 text-center text-xs text-slate-500">
-        AICTE DocVerf Institute Application Portal • Intake & Document Validation.
+        AICTE DocVerif Institute Application Portal • Intake & Document Validation.
       </footer>
     </div>
   );

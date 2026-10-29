@@ -1,4 +1,4 @@
-"""AICTE-DocVerf officer API (TRD §11).
+"""AICTE-DocVerif officer API (TRD §11).
 
 Run locally from the repository root:
 
@@ -20,7 +20,7 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
     resolved = settings or ApiSettings.from_env()
 
     app = FastAPI(
-        title="AICTE-DocVerf Officer API",
+        title="AICTE-DocVerif Officer API",
         version="0.1.0",
         description=(
             "Read-only pipeline results plus officer finding actions and decisions. "

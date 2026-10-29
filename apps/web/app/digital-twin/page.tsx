@@ -4,7 +4,7 @@ import { DigitalTwin } from "@/components/DigitalTwin";
 import { ArrowLeft, Building2 } from "lucide-react";
 
 export const metadata = {
-  title: "Institute Digital Twin — AICTE DocVerf",
+  title: "Institute Digital Twin — AICTE DocVerif",
   description: "Interactive 2D architectural SVG floor plan and spatial evidence review.",
 };
 
@@ -25,7 +25,7 @@ export default function DigitalTwinPage() {
               AICTE
             </div>
             <div>
-              <span className="font-bold text-sm text-white">DocVerf Digital Twin</span>
+              <span className="font-bold text-sm text-white">DocVerif Digital Twin</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 ml-2 px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10">Concept preview</span>
             </div>
           </div>
@@ -55,7 +55,7 @@ export default function DigitalTwinPage() {
       </div>
 
       <footer className="border-t border-slate-900 bg-slate-950 py-4 px-4 text-center text-xs text-slate-500">
-        AICTE DocVerf Digital Twin • Concept preview, not live data • Submitted photos are supporting evidence only.
+        AICTE DocVerif Digital Twin • Concept preview, not live data • Submitted photos are supporting evidence only.
       </footer>
     </div>
   );

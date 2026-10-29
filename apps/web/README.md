@@ -1,4 +1,4 @@
-# DocVerf web (officer console)
+# DocVerif web (officer console)
 
 Next.js + TypeScript + Tailwind + shadcn/ui, with `react-pdf` for document viewing.
 

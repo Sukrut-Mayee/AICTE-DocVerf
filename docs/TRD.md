@@ -1,4 +1,4 @@
-# TRD — AICTE DocVerf
+# TRD — AICTE DocVerif
 
 **Version:** 0.2 (adds §19 resolved questions) · **Date:** 2026-10-24 · **Owner:** Sukrut Mayee (team lead)
 **Repo:** https://github.com/Sukrut-Mayee/AICTE-DocVerf

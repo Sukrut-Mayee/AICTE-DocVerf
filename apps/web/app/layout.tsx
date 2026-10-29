@@ -7,7 +7,7 @@ import "react-pdf/dist/Page/TextLayer.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DocVerf Officer Console",
+  title: "DocVerif Officer Console",
   description: "Evidence-linked review and decision support for AICTE applications.",
 };
 
@@ -28,7 +28,7 @@ export default function RootLayout({
                 </span>
                 <span>
                   <span className="block text-sm font-semibold leading-4 tracking-tight">
-                    AICTE DocVerf
+                    AICTE DocVerif
                   </span>
                   <span className="block text-xs text-muted-foreground">Officer Console</span>
                 </span>

@@ -1,4 +1,4 @@
-# AICTE DocVerf: agent guide
+# AICTE DocVerif: agent guide
 
 Read before coding: **docs/TRD.md §1** (rules for AI coding agents) and **§5** (frozen data contracts).
 `docs/PRD.md` says what and why; the TRD says how. If they conflict, or something is missing,

@@ -355,7 +355,7 @@ export function PortalSubmit() {
         });
       } catch {
         throw new Error(
-          `Cannot reach the DocVerf API at ${API_BASE_URL}. Start the backend and try again.`
+          `Cannot reach the DocVerif API at ${API_BASE_URL}. Start the backend and try again.`
         );
       }
       if (!response.ok) {

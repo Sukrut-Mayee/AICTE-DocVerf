@@ -1,4 +1,4 @@
-# PRD — AICTE DocVerf
+# PRD — AICTE DocVerif
 
 **Product:** AI-powered application validation, document authentication and regulatory compliance verification for AICTE
 **Context:** Smart India Hackathon (SIH) prototype
@@ -14,7 +14,7 @@
 
 AICTE processes Extension of Approval (EoA) applications from technical institutions every year. Each application has a large set of supporting documents (land records, NOCs, affidavits, accreditation certificates, infrastructure photos and more) that officials check by hand. This is slow, inconsistent, and exposed to forged or altered documents.
 
-AICTE DocVerf is a **decision-support layer** that sits between application submission and human scrutiny. It:
+AICTE DocVerif is a **decision-support layer** that sits between application submission and human scrutiny. It:
 
 1. checks whether each document can **prove its own origin** (digital signatures, QR codes, issuer lookups),
 2. extracts structured data from documents with OCR and AI,

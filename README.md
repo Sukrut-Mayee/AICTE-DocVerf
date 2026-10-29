@@ -1,4 +1,4 @@
-# DocVerf
+# DocVerif
 
 **Evidence-first AI validation for AICTE Extension of Approval applications.**
 *AI extracts, rules decide, officers judge.*
@@ -9,7 +9,7 @@
 
 [Demo video](VIDEO_LINK) · [Project document](DOC_LINK) · SIH 2026 · PS 26261 · Team Poseidon01
 
-DocVerf sits between application submission and officer scrutiny. It checks each document, compares
+DocVerif sits between application submission and officer scrutiny. It checks each document, compares
 them with one another, and hands the officer a ranked list of findings with the evidence behind each.
 **It never approves or rejects an application.**
 
